@@ -55,7 +55,7 @@ func main() {
 		}()
 		if os.Args[1] == "serve" {
 			if botToken == "" {
-				log.Fatal("You mast pass bot token throught --token flag")
+				log.Fatal("You mast pass bot token throught --token flag or TLGH_BOT_TOKEN environment variable")
 			}
 			err := discord.Open()
 			if err != nil {

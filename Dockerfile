@@ -10,7 +10,7 @@ RUN go build -o /go/bin/app -v .
 FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/app /app
-ENTRYPOINT ["/app","serve"]
+ENTRYPOINT ["/app","serve","--http=0.0.0.0:8090"]
 VOLUME [ "/pb_data" ]
 EXPOSE 8090
 
