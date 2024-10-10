@@ -8,7 +8,6 @@ RUN go build -o /go/bin/app -v ./...
 
 #final stage
 FROM alpine:latest
-ENV TLGH_BOT_TOKEN=""
 RUN apk --no-cache add ca-certificates
 COPY --from=builder /go/bin/app /app
 ENTRYPOINT ["/app","serve"]
