@@ -3,28 +3,44 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand/v2"
 	"os"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/jellydator/ttlcache/v3"
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
+	"github.com/pocketbase/pocketbase/tools/cron"
 )
 
 var (
-	app *pocketbase.PocketBase
+	app        *pocketbase.PocketBase
+	discord    *discordgo.Session
+	modalCache = ttlcache.New[string, []byte](
+		ttlcache.WithTTL[string, []byte](30 * time.Minute),
+	)
 )
 
 func main() {
 	app = pocketbase.New()
 	var botToken string
+	var disableBot bool
+
+	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
+		scheduler := cron.New()
+		scheduler.MustAdd("send_item_rolls", "*/1 * * * *", sendItemRolls)
+		scheduler.Start()
+		return nil
+	})
+
 	app.RootCmd.PersistentFlags().StringVar(&botToken, "token", "", "Bot token")
+	go modalCache.Start()
+	app.RootCmd.PersistentFlags().BoolVar(&disableBot, "db", false, "Disables bot startup")
 	app.RootCmd.ParseFlags(os.Args[1:])
 	if envToken := os.Getenv("TLGH_BOT_TOKEN"); envToken != "" {
 		botToken = envToken
@@ -34,7 +50,7 @@ func main() {
 		Automigrate: isGoRun,
 	})
 
-	discord, _ := discordgo.New("Bot " + botToken)
+	discord, _ = discordgo.New("Bot " + botToken)
 	app.OnAfterBootstrap().Add(func(e *core.BootstrapEvent) error {
 
 		discord.LogLevel = func() int {
@@ -53,13 +69,20 @@ func main() {
 			}
 
 		}()
-		if os.Args[1] == "serve" {
+		if os.Args[1] == "serve" && !disableBot {
 			if botToken == "" {
 				log.Fatal("You mast pass bot token throught --token flag or TLGH_BOT_TOKEN environment variable")
 			}
 			err := discord.Open()
 			if err != nil {
 				log.Fatalf("could not open session: %s", err)
+			}
+			discord.ApplicationCommandDelete(discord.State.User.ID, "", "") //TODO: delete only command that are not registered
+			for _, comand := range commands {
+				_, err := discord.ApplicationCommandCreate(discord.State.User.ID, "", comand)
+				if err != nil {
+					log.Fatalf("Cannot create slash command: %v", err)
+				}
 			}
 		}
 		return nil
@@ -105,17 +128,34 @@ func main() {
 			}
 		}
 	})
+	discord.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
+		app.Logger().Info("Discord bot: Bot is up!")
+	})
+	// Components are part of interactions, so we register InteractionCreate handler
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
+			if h, ok := commandsHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		case discordgo.InteractionMessageComponent:
+			if h, ok := messageComponentHandlers[i.MessageComponentData().CustomID]; ok {
+				h(s, i)
+			}
+		case discordgo.InteractionModalSubmit:
+			handleModal(s, i)
+
+		}
+
+	})
+
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
 		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
 			return
 		}
-		guildRecord, err := getGuildRecord(i.GuildID)
+		guildRecord, err := getOrCreateGuildRecord(i.GuildID)
 		if err != nil {
-			guildRecord, err = createGuildRecord(i.GuildID)
-			if err != nil {
-				app.Logger().Error("Could get guild info", "eventType", "send guild event", "error", err)
-				return
-			}
+			return
 		}
 		targetChannel := getTargetEventChannel(i.ChannelID, guildRecord.Id)
 		if targetChannel == "" {
@@ -129,53 +169,30 @@ func main() {
 		app.Logger().Info("Sent event info", "Guild", i.GuildID, "event", i, "targetChannelId", targetChannel)
 
 	})
-
+	defer func() {
+		err := discord.Close() //TODO: Check if bot is running
+		if err != nil {
+			log.Printf("could not close session gracefully: %s", err)
+		}
+	}()
 	if err := app.Start(); err != nil {
 		log.Fatal(err)
 	}
-	err := discord.Close()
-	if err != nil {
-		log.Printf("could not close session gracefully: %s", err)
-	}
-}
-
-// Gets guild record and if it does not exists creates it
-func getGuildRecord(discordGuildId string) (*models.Record, error) {
-	guildRecord, err := app.Dao().FindFirstRecordByFilter("guilds", "guild_id={:gId}", dbx.Params{"gId": discordGuildId})
-	return guildRecord, err
-}
-
-func getTargetEventChannel(sourceChannel, guildId string) string {
-	targetChannels := []struct {
-		Id string `db:"annoucementChannelId"`
-	}{}
-	app.DB()
-	err := app.DB().Select("annoucementChannelId").From("eventAnnouncementsConfig").Where(dbx.NewExp("guild = {:gId}", dbx.Params{"gId": guildId})).AndWhere(dbx.NewExp("channelId = {:channel}", dbx.Params{"channel": sourceChannel})).Limit(1).All(&targetChannels) //app.FindFirstRecordByFilter("eventAnnouncementsConfig", "guild = {:gId} && channelId = {:channel}", dbx.Params{"gId": guildId, "channel": sourceChannel})
-	if err != nil {
-		app.Logger().Debug("Could not find event target channel", "error", err)
-		return ""
-	}
-	if len(targetChannels) > 0 {
-		return targetChannels[0].Id
-	} else {
-		return ""
-	}
 
 }
-func createGuildRecord(discordGuildId string) (*models.Record, error) {
-	collection, err := app.Dao().FindCollectionByNameOrId("guilds")
-	if err != nil {
-		return nil, err
-	}
-	guildRecord := models.NewRecord(collection)
-	form := forms.NewRecordUpsert(app, guildRecord)
 
-	form.LoadData(map[string]any{
-		"guild_id": discordGuildId,
-	})
-	guildRecord.Set("guild_id", discordGuildId)
-	if err := form.Submit(); err != nil {
-		return nil, err
+func parseOptions(options []*discordgo.ApplicationCommandInteractionDataOption) map[string]*discordgo.ApplicationCommandInteractionDataOption {
+	optionMap := make(map[string]*discordgo.ApplicationCommandInteractionDataOption, len(options))
+	for _, opt := range options {
+		optionMap[opt.Name] = opt
 	}
-	return guildRecord, nil
+	return optionMap
+}
+
+func rollDice() int {
+	return int(rand.IntN(100))
+}
+
+type newItemRollCacheItem struct {
+	ExpirationDays int `json:"expirationDays"`
 }
