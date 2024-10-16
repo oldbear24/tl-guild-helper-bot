@@ -1,6 +1,6 @@
 module github.com/oldbear24/tl-guild-helper-bot
 
-go 1.23.0
+go 1.23
 
 require (
 	github.com/bwmarrin/discordgo v0.28.1
