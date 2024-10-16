@@ -196,3 +196,14 @@ func rollDice() int {
 type newItemRollCacheItem struct {
 	ExpirationDays int `json:"expirationDays"`
 }
+
+func replyEmpheralInteraction(s *discordgo.Session, i *discordgo.InteractionCreate, text string) {
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral, Content: text}})
+
+}
+func deleteInteractionWithdelay(s *discordgo.Session, i *discordgo.InteractionCreate, delaySeconds int64) {
+	go func() {
+		time.Sleep(time.Second * time.Duration(delaySeconds))
+		s.InteractionResponseDelete(i.Interaction)
+	}()
+}

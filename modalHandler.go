@@ -55,7 +55,8 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 	/*	if err != nil {
 		return
 	}*/
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral, Content: "Saved item roll"}})
+	replyEmpheralInteraction(s, i, "Saved item roll")
+	deleteInteractionWithdelay(s, i, 30)
 	/*go func() {
 		time.Sleep(time.Second * 30)
 		s.InteractionResponseDelete(i.Interaction)

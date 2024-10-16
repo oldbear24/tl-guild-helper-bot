@@ -15,7 +15,12 @@ var messageComponentHandlers = map[string]func(s *discordgo.Session, i *discordg
 		if err != nil {
 			return
 		}
-
+		rollEnd := rollRecord.GetTime("rollEnd")
+		if rollEnd.Compare(time.Now().UTC()) > 0 {
+			replyEmpheralInteraction(s, i, "This roll has already ended")
+			deleteInteractionWithdelay(s, i, 30)
+			return
+		}
 		rollResult := rollDice()
 		player, err := getOrCreatePlayer(i.GuildID, i.Member.User.ID, map[string]any{})
 		if err != nil {
@@ -34,13 +39,10 @@ var messageComponentHandlers = map[string]func(s *discordgo.Session, i *discordg
 			"rollNumber": rollResult,
 		})
 		if err = form.Submit(); err != nil {
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral, Content: "You cannot roll again!"}})
+			replyEmpheralInteraction(s, i, "You cannot roll again!")
 		} else {
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral, Content: "Your roll has been saved"}})
+			replyEmpheralInteraction(s, i, "Your roll has been saved")
 		}
-		go func() {
-			time.Sleep(time.Second * 30)
-			s.InteractionResponseDelete(i.Interaction)
-		}()
+		deleteInteractionWithdelay(s, i, 30)
 	},
 }
