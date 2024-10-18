@@ -15,7 +15,7 @@ func init() {
 			{
 				"id": "_pb_users_auth_",
 				"created": "2024-10-09 18:46:25.135Z",
-				"updated": "2024-10-10 13:59:07.388Z",
+				"updated": "2024-10-16 21:56:44.302Z",
 				"name": "users",
 				"type": "auth",
 				"system": false,
@@ -78,7 +78,7 @@ func init() {
 			{
 				"id": "493kl7wl5aa5qvw",
 				"created": "2024-10-09 18:47:24.141Z",
-				"updated": "2024-10-12 15:10:59.185Z",
+				"updated": "2024-10-16 21:56:44.303Z",
 				"name": "guilds",
 				"type": "base",
 				"system": false,
@@ -125,7 +125,7 @@ func init() {
 			{
 				"id": "db4psg6zrmmssv2",
 				"created": "2024-10-09 18:48:10.760Z",
-				"updated": "2024-10-12 13:31:46.715Z",
+				"updated": "2024-10-16 21:56:44.304Z",
 				"name": "eventAnnouncementsConfig",
 				"type": "base",
 				"system": false,
@@ -188,7 +188,7 @@ func init() {
 			{
 				"id": "x7ch4g59gc6mg1u",
 				"created": "2024-10-12 01:32:31.380Z",
-				"updated": "2024-10-12 13:31:01.195Z",
+				"updated": "2024-10-16 21:56:44.304Z",
 				"name": "players",
 				"type": "base",
 				"system": false,
@@ -251,7 +251,7 @@ func init() {
 			{
 				"id": "7n8h6g7j86361xn",
 				"created": "2024-10-12 15:10:10.289Z",
-				"updated": "2024-10-12 15:10:10.289Z",
+				"updated": "2024-10-17 22:17:00.545Z",
 				"name": "itemRolls",
 				"type": "base",
 				"system": false,
@@ -342,23 +342,20 @@ func init() {
 					},
 					{
 						"system": false,
-						"id": "auphy2be",
-						"name": "sent",
-						"type": "bool",
-						"required": false,
+						"id": "ndhsn7nw",
+						"name": "status",
+						"type": "select",
+						"required": true,
 						"presentable": false,
 						"unique": false,
-						"options": {}
-					},
-					{
-						"system": false,
-						"id": "gkwm9pm5",
-						"name": "resolved",
-						"type": "bool",
-						"required": false,
-						"presentable": false,
-						"unique": false,
-						"options": {}
+						"options": {
+							"maxSelect": 1,
+							"values": [
+								"new",
+								"in_progress",
+								"ended"
+							]
+						}
 					}
 				],
 				"indexes": [],
@@ -372,7 +369,7 @@ func init() {
 			{
 				"id": "tmsr4yger7lzzgr",
 				"created": "2024-10-13 01:30:00.688Z",
-				"updated": "2024-10-16 17:42:06.018Z",
+				"updated": "2024-10-16 21:56:44.306Z",
 				"name": "itemPlayerRolls",
 				"type": "base",
 				"system": false,

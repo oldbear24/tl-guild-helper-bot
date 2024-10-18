@@ -33,7 +33,8 @@ func main() {
 
 	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
 		scheduler := cron.New()
-		scheduler.MustAdd("send_item_rolls", "*/1 * * * *", sendItemRolls)
+		scheduler.MustAdd("send_item_rolls", "* * * * *", sendItemRolls)
+		scheduler.MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
 		scheduler.Start()
 		return nil
 	})
@@ -190,7 +191,8 @@ func parseOptions(options []*discordgo.ApplicationCommandInteractionDataOption) 
 }
 
 func rollDice() int {
-	return int(rand.IntN(100))
+
+	return rand.IntN(100)
 }
 
 type newItemRollCacheItem struct {

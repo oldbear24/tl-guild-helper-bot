@@ -47,6 +47,7 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 		"itemDescription": data.Components[1].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
 		"rollStart":       time.Now().UTC(),
 		"rollEnd":         time.Now().UTC().AddDate(0, 0, newRollItem.ExpirationDays),
+		"status":          "new",
 	})
 	if err := form.Submit(); err != nil {
 		return

@@ -34,9 +34,9 @@ var messageComponentHandlers = map[string]func(s *discordgo.Session, i *discordg
 
 		form := forms.NewRecordUpsert(app, rRecord)
 		form.LoadData(map[string]any{
-			"roll":       rollRecord.Id,
-			"player":     player.Id,
-			"rollNumber": rollResult,
+			"roll":         rollRecord.Id,
+			"player":       player.Id,
+			"rolledNumber": rollResult,
 		})
 		if err = form.Submit(); err != nil {
 			replyEmpheralInteraction(s, i, "You cannot roll again!")
