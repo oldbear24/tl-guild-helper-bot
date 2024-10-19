@@ -14,6 +14,7 @@ import (
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/pocketbase/pocketbase/tools/cron"
 )
@@ -208,4 +209,19 @@ func deleteInteractionWithdelay(s *discordgo.Session, i *discordgo.InteractionCr
 		time.Sleep(time.Second * time.Duration(delaySeconds))
 		s.InteractionResponseDelete(i.Interaction)
 	}()
+}
+
+func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId string) error {
+	gRecord, _ := getOrCreateGuildRecord(i.GuildID)
+	form := forms.NewRecordUpsert(app, gRecord)
+	form.LoadData(map[string]any{
+		channelDbName: channelId,
+	})
+
+	if err := form.Submit(); err != nil {
+		app.Logger().Error("Cannot save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId, "error", err)
+		return err
+	}
+	app.Logger().Info("Save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId)
+	return nil
 }

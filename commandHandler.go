@@ -5,7 +5,6 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
-	"github.com/pocketbase/pocketbase/forms"
 )
 
 var (
@@ -51,17 +50,12 @@ var (
 
 			if rollChannel, ok := optionMap["channel"]; ok {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseDeferredChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral}})
-				gRecord, _ := getOrCreateGuildRecord(i.GuildID)
-				form := forms.NewRecordUpsert(app, gRecord)
-				form.LoadData(map[string]any{
-					"itemRollChannelId": rollChannel.ChannelValue(s).ID,
-				})
 
-				if err := form.Submit(); err != nil {
-					app.Logger().Error("Cannot save item roll chanel", "guildId", i.GuildID, "channel", rollChannel)
-					return
+				err := setGuildChannel(i, "itemRollChannelId", rollChannel.ChannelValue(s).ID)
+				if err != nil {
+					replyEmpheralInteraction(s, i, "Could not save item roll channel")
 				}
-				s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{Content: "Saved item roll channel", Flags: discordgo.MessageFlagsEphemeral})
+				replyEmpheralInteraction(s, i, "Saved item roll channel")
 
 			}
 

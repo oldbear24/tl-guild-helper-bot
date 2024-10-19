@@ -32,7 +32,7 @@ func sendItemRolls() {
 			Embeds: []*discordgo.MessageEmbed{{
 				Type:        discordgo.EmbedTypeArticle,
 				Title:       v.GetString("itemName"),
-				Description: v.GetString("itemDescription"),
+				Description: fmt.Sprintf("%s\n\nEnding  <t:%d:R>", v.GetString("itemDescription"), v.GetDateTime("rollEnd").Time().Unix()),
 			}},
 			Components: []discordgo.MessageComponent{
 				discordgo.ActionsRow{Components: []discordgo.MessageComponent{
