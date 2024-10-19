@@ -15,7 +15,7 @@ func init() {
 			{
 				"id": "_pb_users_auth_",
 				"created": "2024-10-09 18:46:25.135Z",
-				"updated": "2024-10-16 21:56:44.302Z",
+				"updated": "2024-10-18 23:03:44.148Z",
 				"name": "users",
 				"type": "auth",
 				"system": false,
@@ -78,7 +78,7 @@ func init() {
 			{
 				"id": "493kl7wl5aa5qvw",
 				"created": "2024-10-09 18:47:24.141Z",
-				"updated": "2024-10-16 21:56:44.303Z",
+				"updated": "2024-10-19 20:06:25.932Z",
 				"name": "guilds",
 				"type": "base",
 				"system": false,
@@ -110,6 +110,20 @@ func init() {
 							"max": null,
 							"pattern": ""
 						}
+					},
+					{
+						"system": false,
+						"id": "dtihoomv",
+						"name": "eventChannelId",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
 					}
 				],
 				"indexes": [
@@ -125,7 +139,7 @@ func init() {
 			{
 				"id": "db4psg6zrmmssv2",
 				"created": "2024-10-09 18:48:10.760Z",
-				"updated": "2024-10-16 21:56:44.304Z",
+				"updated": "2024-10-18 23:03:44.149Z",
 				"name": "eventAnnouncementsConfig",
 				"type": "base",
 				"system": false,
@@ -188,7 +202,7 @@ func init() {
 			{
 				"id": "x7ch4g59gc6mg1u",
 				"created": "2024-10-12 01:32:31.380Z",
-				"updated": "2024-10-16 21:56:44.304Z",
+				"updated": "2024-10-18 23:06:15.472Z",
 				"name": "players",
 				"type": "base",
 				"system": false,
@@ -228,7 +242,7 @@ func init() {
 						"id": "kfikyi76",
 						"name": "nickname",
 						"type": "text",
-						"required": true,
+						"required": false,
 						"presentable": false,
 						"unique": false,
 						"options": {
@@ -251,7 +265,7 @@ func init() {
 			{
 				"id": "7n8h6g7j86361xn",
 				"created": "2024-10-12 15:10:10.289Z",
-				"updated": "2024-10-17 22:17:00.545Z",
+				"updated": "2024-10-18 23:03:44.150Z",
 				"name": "itemRolls",
 				"type": "base",
 				"system": false,
@@ -369,7 +383,7 @@ func init() {
 			{
 				"id": "tmsr4yger7lzzgr",
 				"created": "2024-10-13 01:30:00.688Z",
-				"updated": "2024-10-16 21:56:44.306Z",
+				"updated": "2024-10-18 23:03:44.151Z",
 				"name": "itemPlayerRolls",
 				"type": "base",
 				"system": false,
@@ -424,6 +438,300 @@ func init() {
 				"indexes": [
 					"CREATE UNIQUE INDEX ` + "`" + `idx_bxfK4qY` + "`" + ` ON ` + "`" + `itemPlayerRolls` + "`" + ` (\n  ` + "`" + `roll` + "`" + `,\n  ` + "`" + `player` + "`" + `\n)"
 				],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "mrrj4sgraz37pmn",
+				"created": "2024-10-19 18:50:46.113Z",
+				"updated": "2024-10-19 18:50:46.113Z",
+				"name": "items",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "ebiupd9g",
+						"name": "externalId",
+						"type": "number",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"noDecimal": false
+						}
+					},
+					{
+						"system": false,
+						"id": "ywltwx9k",
+						"name": "name",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "0af8rkmx",
+						"name": "color",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "vgvw9zpl",
+						"name": "category",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					}
+				],
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_v6BiERr` + "`" + ` ON ` + "`" + `items` + "`" + ` (` + "`" + `name` + "`" + `)"
+				],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "mrxs8i8fudqo2e3",
+				"created": "2024-10-19 18:51:47.619Z",
+				"updated": "2024-10-19 23:19:33.385Z",
+				"name": "eventTypes",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "7wrnh8ku",
+						"name": "name",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "qon5tp0v",
+						"name": "category",
+						"type": "select",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"maxSelect": 1,
+							"values": [
+								"boss"
+							]
+						}
+					},
+					{
+						"system": false,
+						"id": "blvrbajc",
+						"name": "enabled",
+						"type": "bool",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {}
+					}
+				],
+				"indexes": [],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "j57p12wtgaqqj62",
+				"created": "2024-10-19 20:06:01.886Z",
+				"updated": "2024-10-19 23:21:09.640Z",
+				"name": "eventConfig",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "ywzr9i76",
+						"name": "name",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "k4le9e3h",
+						"name": "description",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "4uus9oxz",
+						"name": "type",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "mrxs8i8fudqo2e3",
+							"cascadeDelete": true,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "cknronyw",
+						"name": "eventTime",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "hssrdwkt",
+						"name": "image",
+						"type": "file",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"mimeTypes": [],
+							"thumbs": [],
+							"maxSelect": 1,
+							"maxSize": 5242880,
+							"protected": false
+						}
+					},
+					{
+						"system": false,
+						"id": "9cgm5hz3",
+						"name": "enabled",
+						"type": "bool",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {}
+					}
+				],
+				"indexes": [],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "o2fn8399e28o9wm",
+				"created": "2024-10-19 23:20:47.048Z",
+				"updated": "2024-10-19 23:20:58.060Z",
+				"name": "events",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "g64xohyj",
+						"name": "event",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "j57p12wtgaqqj62",
+							"cascadeDelete": true,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "sydjeyff",
+						"name": "startDate",
+						"type": "date",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": "",
+							"max": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "b6sxq3jg",
+						"name": "status",
+						"type": "select",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"maxSelect": 1,
+							"values": [
+								"new",
+								"end"
+							]
+						}
+					}
+				],
+				"indexes": [],
 				"listRule": null,
 				"viewRule": null,
 				"createRule": null,
