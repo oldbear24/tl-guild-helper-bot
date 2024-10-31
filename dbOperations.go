@@ -46,7 +46,6 @@ func getTargetEventChannel(sourceChannel, guildId string) string {
 	targetChannels := []struct {
 		Id string `db:"annoucementChannelId"`
 	}{}
-	app.DB()
 	err := app.DB().Select("annoucementChannelId").From("eventAnnouncementsConfig").Where(dbx.NewExp("guild = {:gId}", dbx.Params{"gId": guildId})).AndWhere(dbx.NewExp("channelId = {:channel}", dbx.Params{"channel": sourceChannel})).Limit(1).All(&targetChannels) //app.FindFirstRecordByFilter("eventAnnouncementsConfig", "guild = {:gId} && channelId = {:channel}", dbx.Params{"gId": guildId, "channel": sourceChannel})
 	if err != nil {
 		app.Logger().Debug("Could not find event target channel", "error", err)

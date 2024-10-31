@@ -199,7 +199,7 @@ func main() {
 		}
 		_, err = s.ChannelMessageSend(targetChannel, "https://discord.com/events/"+i.GuildID+"/"+i.ID)
 		if err != nil {
-			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", i.GuildID)
+			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", i.GuildID, "error", err)
 			return
 		}
 		app.Logger().Info("Sent event info", "Guild", i.GuildID, "event", i, "targetChannelId", targetChannel)
