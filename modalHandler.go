@@ -29,7 +29,7 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 	modalCache.Delete(ci.Key())
 	var newRollItem newItemRollCacheItem
 	json.Unmarshal(ci.Value(), &newRollItem)
-	guildRecord, err := getOrCreateGuildRecord(i.GuildID)
+	guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
 	if err != nil {
 		return
 	}

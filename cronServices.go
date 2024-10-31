@@ -5,10 +5,14 @@ import (
 	"sort"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/gorhill/cronexpr"
 	"github.com/pocketbase/dbx"
+	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/forms"
+	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
@@ -111,6 +115,116 @@ func closeItemRolls() {
 		if err = form.Submit(); err != nil {
 			app.Logger().Error("Error saving roll state", "error", err)
 		}
+	}
+}
+func createEvents() {
+
+	eventConfigs, err := app.Dao().FindRecordsByFilter("eventConfig", "enabled=true", "", 0, 0)
+	if err != nil {
+		return
+	}
+	for _, conf := range eventConfigs {
+		nextTime := cronexpr.MustParse(conf.GetString("eventTime")).Next(time.Now()).UTC()
+		nextVotingTime := cronexpr.MustParse(conf.GetString("eventVotingEndTime")).Next(time.Now()).UTC()
+		guildRecord, _ := app.Dao().FindRecordById("guilds", conf.GetString("guild"))
+
+		existingEvent, err := app.Dao().FindFirstRecordByFilter("events", "event={:event} && startDate>={:start}", dbx.Params{"event": conf.Id, "start": nextTime})
+		if err == nil || existingEvent != nil {
+			continue
+		}
+		eventColl, _ := app.Dao().FindCollectionByNameOrId("events")
+		rec := models.NewRecord(eventColl)
+		form := forms.NewRecordUpsert(app, rec)
+		form.LoadData(map[string]any{
+			"event":     conf.Id,
+			"startDate": nextTime,
+			"status":    "new",
+			"voteEnd":   nextVotingTime,
+		})
+		form.Submit()
+
+		eventTypes, _ := app.Dao().FindRecordsByFilter("eventTypes", "enabled=true", "", 0, 0)
+		voteComponents := []discordgo.MessageComponent{}
+		row := discordgo.ActionsRow{}
+		for _, eventType := range eventTypes {
+
+			if len(row.Components) > 4 {
+				voteComponents = append(voteComponents, row)
+				row = discordgo.ActionsRow{}
+			}
+			row.Components = append(row.Components, discordgo.Button{
+				Label:    eventType.GetString("name"),
+				CustomID: "eventVote_" + rec.Id + "_" + eventType.Id,
+				Style:    discordgo.PrimaryButton,
+			})
+		}
+		if len(row.Components) > 0 {
+			voteComponents = append(voteComponents, row)
+		}
+
+		discord.ChannelMessageSendComplex(guildRecord.GetString("eventVoteChannelId"), &discordgo.MessageSend{
+			Embeds: []*discordgo.MessageEmbed{
+				{
+					Type:        discordgo.EmbedTypeArticle,
+					Title:       conf.GetString("votingTitle"),
+					Description: conf.GetString("votingDescription"),
+				},
+			},
+			Components: voteComponents,
+		})
+
+	}
+}
+
+/*
+	func proccesEventVote() {
+		guildRecord, _ := app.Dao().FindRecordById("guilds", conf.GetString("guild"))
+		nextVotingTime := cronexpr.MustParse(conf.GetString("eventVotingEndTime")).Next(time.Now()).UTC()
+		event, err := discord.GuildScheduledEventCreate(guildRecord.GetString("guild_id"), &discordgo.GuildScheduledEventParams{
+			ChannelID:          conf.GetString("eventChannelId"),
+			Name:               conf.GetString("name"),
+			Description:        conf.GetString("description"),
+			ScheduledStartTime: &nextTime,
+			EntityType:         discordgo.GuildScheduledEventEntityTypeVoice,
+			PrivacyLevel:       discordgo.GuildScheduledEventPrivacyLevelGuildOnly,
+		})
+		if err != nil {
+			app.Logger().Error("Cannot create guild event", "event_config", conf.Id, "error", err)
+			return
+		}
+	}
+*/
+
+func refreshGuildsMembers() {
+	guilds, _ := app.Dao().FindRecordsByFilter("guilds", "", "", 0, 0)
+	for _, guild := range guilds {
+		guildId := guild.GetString("guild_id")
+		members, _ := discord.GuildMembers(guildId, "", 1000)
+		app.Dao().RunInTransaction(func(txDao *daos.Dao) error {
+
+			_, err := txDao.DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guild.Id})).Execute()
+			if err != nil {
+				return err
+			}
+			for _, v := range members {
+				if v.User.Bot {
+					continue
+				}
+				nick := ""
+				if v.Nick == "" {
+					nick = v.User.GlobalName
+				} else {
+					nick = v.Nick
+				}
+
+				_, err := getOrCreatePlayer(guildId, v.User, map[string]any{"serverNick": nick, "active": true})
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+
 	}
 }
 

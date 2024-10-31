@@ -15,7 +15,7 @@ func init() {
 			{
 				"id": "_pb_users_auth_",
 				"created": "2024-10-09 18:46:25.135Z",
-				"updated": "2024-10-18 23:03:44.148Z",
+				"updated": "2024-10-27 16:08:44.223Z",
 				"name": "users",
 				"type": "auth",
 				"system": false,
@@ -64,21 +64,21 @@ func init() {
 				"updateRule": "id = @request.auth.id",
 				"deleteRule": "id = @request.auth.id",
 				"options": {
-					"allowEmailAuth": true,
-					"allowOAuth2Auth": true,
-					"allowUsernameAuth": true,
+					"allowEmailAuth": false,
+					"allowOAuth2Auth": false,
+					"allowUsernameAuth": false,
 					"exceptEmailDomains": null,
 					"manageRule": null,
 					"minPasswordLength": 8,
 					"onlyEmailDomains": null,
-					"onlyVerified": false,
+					"onlyVerified": true,
 					"requireEmail": false
 				}
 			},
 			{
 				"id": "493kl7wl5aa5qvw",
 				"created": "2024-10-09 18:47:24.141Z",
-				"updated": "2024-10-19 20:06:25.932Z",
+				"updated": "2024-10-28 01:07:57.407Z",
 				"name": "guilds",
 				"type": "base",
 				"system": false,
@@ -89,6 +89,20 @@ func init() {
 						"name": "guild_id",
 						"type": "text",
 						"required": true,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "t80wbjyi",
+						"name": "name",
+						"type": "text",
+						"required": false,
 						"presentable": false,
 						"unique": false,
 						"options": {
@@ -114,7 +128,7 @@ func init() {
 					{
 						"system": false,
 						"id": "dtihoomv",
-						"name": "eventChannelId",
+						"name": "eventVoteChannelId",
 						"type": "text",
 						"required": false,
 						"presentable": false,
@@ -139,7 +153,7 @@ func init() {
 			{
 				"id": "db4psg6zrmmssv2",
 				"created": "2024-10-09 18:48:10.760Z",
-				"updated": "2024-10-18 23:03:44.149Z",
+				"updated": "2024-10-27 16:03:19.133Z",
 				"name": "eventAnnouncementsConfig",
 				"type": "base",
 				"system": false,
@@ -202,7 +216,7 @@ func init() {
 			{
 				"id": "x7ch4g59gc6mg1u",
 				"created": "2024-10-12 01:32:31.380Z",
-				"updated": "2024-10-18 23:06:15.472Z",
+				"updated": "2024-10-30 23:49:41.513Z",
 				"name": "players",
 				"type": "base",
 				"system": false,
@@ -221,6 +235,20 @@ func init() {
 							"minSelect": null,
 							"maxSelect": 1,
 							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "jzfjkzdp",
+						"name": "name",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
 						}
 					},
 					{
@@ -250,6 +278,30 @@ func init() {
 							"max": null,
 							"pattern": ""
 						}
+					},
+					{
+						"system": false,
+						"id": "gmto2w5p",
+						"name": "serverNick",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "bf4o96nh",
+						"name": "active",
+						"type": "bool",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {}
 					}
 				],
 				"indexes": [
@@ -265,7 +317,7 @@ func init() {
 			{
 				"id": "7n8h6g7j86361xn",
 				"created": "2024-10-12 15:10:10.289Z",
-				"updated": "2024-10-18 23:03:44.150Z",
+				"updated": "2024-10-27 16:03:19.134Z",
 				"name": "itemRolls",
 				"type": "base",
 				"system": false,
@@ -383,7 +435,7 @@ func init() {
 			{
 				"id": "tmsr4yger7lzzgr",
 				"created": "2024-10-13 01:30:00.688Z",
-				"updated": "2024-10-18 23:03:44.151Z",
+				"updated": "2024-10-27 16:03:19.134Z",
 				"name": "itemPlayerRolls",
 				"type": "base",
 				"system": false,
@@ -448,7 +500,7 @@ func init() {
 			{
 				"id": "mrrj4sgraz37pmn",
 				"created": "2024-10-19 18:50:46.113Z",
-				"updated": "2024-10-19 18:50:46.113Z",
+				"updated": "2024-10-27 16:03:19.135Z",
 				"name": "items",
 				"type": "base",
 				"system": false,
@@ -523,7 +575,7 @@ func init() {
 			{
 				"id": "mrxs8i8fudqo2e3",
 				"created": "2024-10-19 18:51:47.619Z",
-				"updated": "2024-10-19 23:19:33.385Z",
+				"updated": "2024-10-28 02:13:44.963Z",
 				"name": "eventTypes",
 				"type": "base",
 				"system": false,
@@ -544,21 +596,6 @@ func init() {
 					},
 					{
 						"system": false,
-						"id": "qon5tp0v",
-						"name": "category",
-						"type": "select",
-						"required": false,
-						"presentable": false,
-						"unique": false,
-						"options": {
-							"maxSelect": 1,
-							"values": [
-								"boss"
-							]
-						}
-					},
-					{
-						"system": false,
 						"id": "blvrbajc",
 						"name": "enabled",
 						"type": "bool",
@@ -571,7 +608,7 @@ func init() {
 				"indexes": [],
 				"listRule": null,
 				"viewRule": null,
-				"createRule": null,
+				"createRule": "",
 				"updateRule": null,
 				"deleteRule": null,
 				"options": {}
@@ -579,7 +616,7 @@ func init() {
 			{
 				"id": "j57p12wtgaqqj62",
 				"created": "2024-10-19 20:06:01.886Z",
-				"updated": "2024-10-19 23:21:09.640Z",
+				"updated": "2024-10-28 02:02:25.170Z",
 				"name": "eventConfig",
 				"type": "base",
 				"system": false,
@@ -588,6 +625,36 @@ func init() {
 						"system": false,
 						"id": "ywzr9i76",
 						"name": "name",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "i2o6kjch",
+						"name": "guild",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "493kl7wl5aa5qvw",
+							"cascadeDelete": false,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "vtarkzbt",
+						"name": "eventChannelId",
 						"type": "text",
 						"required": false,
 						"presentable": false,
@@ -614,24 +681,50 @@ func init() {
 					},
 					{
 						"system": false,
-						"id": "4uus9oxz",
-						"name": "type",
-						"type": "relation",
+						"id": "psyenrv6",
+						"name": "votingTitle",
+						"type": "text",
 						"required": false,
 						"presentable": false,
 						"unique": false,
 						"options": {
-							"collectionId": "mrxs8i8fudqo2e3",
-							"cascadeDelete": true,
-							"minSelect": null,
-							"maxSelect": 1,
-							"displayFields": null
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "jeasfr9j",
+						"name": "votingDescription",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
 						}
 					},
 					{
 						"system": false,
 						"id": "cknronyw",
 						"name": "eventTime",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "onhus3vj",
+						"name": "eventVotingEndTime",
 						"type": "text",
 						"required": false,
 						"presentable": false,
@@ -680,7 +773,7 @@ func init() {
 			{
 				"id": "o2fn8399e28o9wm",
 				"created": "2024-10-19 23:20:47.048Z",
-				"updated": "2024-10-19 23:20:58.060Z",
+				"updated": "2024-10-28 02:13:38.627Z",
 				"name": "events",
 				"type": "base",
 				"system": false,
@@ -703,8 +796,35 @@ func init() {
 					},
 					{
 						"system": false,
+						"id": "nabqoiof",
+						"name": "eventId",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
 						"id": "sydjeyff",
 						"name": "startDate",
+						"type": "date",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": "",
+							"max": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "opvectiz",
+						"name": "voteEnd",
 						"type": "date",
 						"required": false,
 						"presentable": false,
@@ -726,12 +846,154 @@ func init() {
 							"maxSelect": 1,
 							"values": [
 								"new",
+								"voted",
 								"end"
 							]
 						}
 					}
 				],
 				"indexes": [],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "xmrfb0lc2lbf182",
+				"created": "2024-10-30 22:31:58.840Z",
+				"updated": "2024-10-31 18:27:07.933Z",
+				"name": "eventLogs",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "mu9wfacz",
+						"name": "eventName",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "5zxwzrqc",
+						"name": "guild",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "493kl7wl5aa5qvw",
+							"cascadeDelete": true,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "w4vqgu2s",
+						"name": "eventId",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "uspx9f22",
+						"name": "start",
+						"type": "date",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": "",
+							"max": ""
+						}
+					}
+				],
+				"indexes": [],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "yd7wu88ysosk1ev",
+				"created": "2024-10-31 18:26:51.768Z",
+				"updated": "2024-10-31 19:10:45.145Z",
+				"name": "eventPlayerLogs",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "a8d1vw04",
+						"name": "eventLog",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "xmrfb0lc2lbf182",
+							"cascadeDelete": true,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "9s9o3q0o",
+						"name": "player",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "x7ch4g59gc6mg1u",
+							"cascadeDelete": true,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "hf7zafrq",
+						"name": "status",
+						"type": "select",
+						"required": true,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"maxSelect": 1,
+							"values": [
+								"registered",
+								"unregistered"
+							]
+						}
+					}
+				],
+				"indexes": [
+					"CREATE UNIQUE INDEX ` + "`" + `idx_cc3DwvZ` + "`" + ` ON ` + "`" + `eventPlayerLogs` + "`" + ` (\n  ` + "`" + `eventLog` + "`" + `,\n  ` + "`" + `player` + "`" + `\n)"
+				],
 				"listRule": null,
 				"viewRule": null,
 				"createRule": null,

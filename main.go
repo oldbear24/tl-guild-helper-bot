@@ -12,9 +12,11 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/jellydator/ttlcache/v3"
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
+	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 	"github.com/pocketbase/pocketbase/tools/cron"
 )
@@ -36,6 +38,9 @@ func main() {
 		scheduler := cron.New()
 		scheduler.MustAdd("send_item_rolls", "* * * * *", sendItemRolls)
 		scheduler.MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
+		scheduler.MustAdd("create_events", "* * * * *", createEvents)
+		scheduler.MustAdd("get_guilds_members", "0 * * * *", refreshGuildsMembers)
+
 		scheduler.Start()
 		return nil
 	})
@@ -53,6 +58,7 @@ func main() {
 	})
 
 	discord, _ = discordgo.New("Bot " + botToken)
+	discord.Identify.Intents = discord.Identify.Intents | discordgo.IntentGuildMembers
 	app.OnAfterBootstrap().Add(func(e *core.BootstrapEvent) error {
 
 		discord.LogLevel = func() int {
@@ -118,17 +124,37 @@ func main() {
 
 	}
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildCreate) {
-
-		_, err := getGuildRecord(i.ID)
+		guildRecord, err := getOrCreateGuildRecord(i.Guild)
 		if err != nil {
-			_, err := createGuildRecord(i.ID)
-			if err != nil {
-				app.Logger().Error("Could not create guild record on join", "guild", i.ID)
-				return
+			app.Logger().Error("Could not create guild record on join", "guild", i.ID)
+			return
+		} else {
+			app.Logger().Info("Created guild record", "guild", i.ID)
+		}
+
+		members, _ := discord.GuildMembers(i.Guild.ID, "", 1000)
+
+		_, err = app.Dao().DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guildRecord.Id})).Execute()
+		if err != nil {
+			return
+		}
+		for _, v := range members {
+			if v.User.Bot {
+				continue
+			}
+			nick := ""
+			if v.Nick == "" {
+				nick = v.User.GlobalName
 			} else {
-				app.Logger().Info("Created guild record", "guild", i.ID)
+				nick = v.Nick
+			}
+
+			_, err := getOrCreatePlayer(i.Guild.ID, v.User, map[string]any{"serverNick": nick, "active": true})
+			if err != nil {
+				return
 			}
 		}
+
 	})
 	discord.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		app.Logger().Info("Discord bot: Bot is up!")
@@ -150,15 +176,23 @@ func main() {
 		}
 
 	})
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUpdate) {
+		guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
+		if err != nil {
+			return
+		}
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.ScheduledStartTime)
+	})
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
 		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
 			return
 		}
-		guildRecord, err := getOrCreateGuildRecord(i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
 		if err != nil {
 			return
 		}
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.ScheduledStartTime)
 		targetChannel := getTargetEventChannel(i.ChannelID, guildRecord.Id)
 		if targetChannel == "" {
 			return
@@ -170,6 +204,65 @@ func main() {
 		}
 		app.Logger().Info("Sent event info", "Guild", i.GuildID, "event", i, "targetChannelId", targetChannel)
 
+	})
+
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUserAdd) {
+
+		el, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.GuildScheduledEventID)
+		if err != nil {
+			return
+		}
+		member, err := discord.GuildMember(i.GuildID, i.UserID)
+		if err != nil {
+			return
+		}
+		pl, err := getOrCreatePlayer(i.GuildID, member.User, map[string]any{})
+		if err != nil {
+			return
+		}
+		playerLogRecord, err := app.Dao().FindFirstRecordByFilter("eventPlayerLogs", "eventLog={:el} && player={:pl}", dbx.Params{"el": el.Id, "pl": pl.Id})
+		if err != nil {
+			collection, _ := app.Dao().FindCollectionByNameOrId("eventPlayerLogs")
+			playerLogRecord = models.NewRecord(collection)
+		}
+
+		form := forms.NewRecordUpsert(app, playerLogRecord)
+
+		form.LoadData(map[string]any{
+			"eventLog": el.Id,
+			"player":   pl.Id,
+			"status":   "registered",
+		})
+		form.Submit()
+
+	})
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUserRemove) {
+		el, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.GuildScheduledEventID)
+		if err != nil {
+			return
+		}
+		member, err := discord.GuildMember(i.GuildID, i.UserID)
+		if err != nil {
+			return
+		}
+		pl, err := getOrCreatePlayer(i.GuildID, member.User, map[string]any{})
+		if err != nil {
+			return
+		}
+		playerLogRecord, err := app.Dao().FindFirstRecordByFilter("eventPlayerLogs", "eventLog={:el} && player={:pl}", dbx.Params{"el": el.Id, "pl": pl.Id})
+		if err != nil {
+			collection, _ := app.Dao().FindCollectionByNameOrId("eventPlayerLogs")
+			playerLogRecord = models.NewRecord(collection)
+		}
+
+		form := forms.NewRecordUpsert(app, playerLogRecord)
+
+		form.LoadData(map[string]any{
+			"eventLog": el.Id,
+			"player":   pl.Id,
+			"status":   "unregistered",
+		})
+		form.Submit()
 	})
 	defer func() {
 		err := discord.Close() //TODO: Check if bot is running
@@ -212,7 +305,7 @@ func deleteInteractionWithdelay(s *discordgo.Session, i *discordgo.InteractionCr
 }
 
 func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId string) error {
-	gRecord, _ := getOrCreateGuildRecord(i.GuildID)
+	gRecord, _ := getOrCreateGuildRecordById(i.GuildID)
 	form := forms.NewRecordUpsert(app, gRecord)
 	form.LoadData(map[string]any{
 		channelDbName: channelId,
@@ -224,4 +317,20 @@ func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId st
 	}
 	app.Logger().Info("Save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId)
 	return nil
+}
+func createOrUpdateEventLogRecord(guildRecord *models.Record, id, name string, start time.Time) {
+	logRecord, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", id)
+	if err != nil {
+		collection, _ := app.Dao().FindCollectionByNameOrId("eventLogs")
+		logRecord = models.NewRecord(collection)
+	}
+	form := forms.NewRecordUpsert(app, logRecord)
+
+	form.LoadData(map[string]any{
+		"eventName": name,
+		"guild":     guildRecord.Id,
+		"eventId":   id,
+		"start":     start,
+	})
+	form.Submit()
 }
