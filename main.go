@@ -175,7 +175,13 @@ func main() {
 		if targetChannel == "" {
 			return
 		}
-		_, err = s.ChannelMessageSend(targetChannel, "https://discord.com/events/"+i.GuildID+"/"+i.ID)
+		mention := ""
+		guildMentionRole := guildRecord.GetString("announcemenetRoleId")
+		if guildMentionRole != "" {
+			mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
+		}
+
+		_, err = s.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, i.GuildID, i.ID))
 		if err != nil {
 			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", i.GuildID, "error", err)
 			return

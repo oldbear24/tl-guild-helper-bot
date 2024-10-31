@@ -15,7 +15,7 @@ func init() {
 			{
 				"id": "_pb_users_auth_",
 				"created": "2024-10-09 18:46:25.135Z",
-				"updated": "2024-10-27 16:08:44.223Z",
+				"updated": "2024-10-31 19:19:57.812Z",
 				"name": "users",
 				"type": "auth",
 				"system": false,
@@ -78,7 +78,7 @@ func init() {
 			{
 				"id": "493kl7wl5aa5qvw",
 				"created": "2024-10-09 18:47:24.141Z",
-				"updated": "2024-10-28 01:07:57.407Z",
+				"updated": "2024-10-31 21:01:49.839Z",
 				"name": "guilds",
 				"type": "base",
 				"system": false,
@@ -138,6 +138,20 @@ func init() {
 							"max": null,
 							"pattern": ""
 						}
+					},
+					{
+						"system": false,
+						"id": "puzaz1s0",
+						"name": "announcemenetRoleId",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
 					}
 				],
 				"indexes": [
@@ -153,7 +167,7 @@ func init() {
 			{
 				"id": "db4psg6zrmmssv2",
 				"created": "2024-10-09 18:48:10.760Z",
-				"updated": "2024-10-27 16:03:19.133Z",
+				"updated": "2024-10-31 19:19:57.814Z",
 				"name": "eventAnnouncementsConfig",
 				"type": "base",
 				"system": false,
@@ -216,7 +230,7 @@ func init() {
 			{
 				"id": "x7ch4g59gc6mg1u",
 				"created": "2024-10-12 01:32:31.380Z",
-				"updated": "2024-10-30 23:49:41.513Z",
+				"updated": "2024-10-31 19:19:57.814Z",
 				"name": "players",
 				"type": "base",
 				"system": false,
@@ -317,7 +331,7 @@ func init() {
 			{
 				"id": "7n8h6g7j86361xn",
 				"created": "2024-10-12 15:10:10.289Z",
-				"updated": "2024-10-27 16:03:19.134Z",
+				"updated": "2024-10-31 19:19:57.815Z",
 				"name": "itemRolls",
 				"type": "base",
 				"system": false,
@@ -435,7 +449,7 @@ func init() {
 			{
 				"id": "tmsr4yger7lzzgr",
 				"created": "2024-10-13 01:30:00.688Z",
-				"updated": "2024-10-27 16:03:19.134Z",
+				"updated": "2024-10-31 19:19:57.815Z",
 				"name": "itemPlayerRolls",
 				"type": "base",
 				"system": false,
@@ -500,7 +514,7 @@ func init() {
 			{
 				"id": "mrrj4sgraz37pmn",
 				"created": "2024-10-19 18:50:46.113Z",
-				"updated": "2024-10-27 16:03:19.135Z",
+				"updated": "2024-10-31 19:19:57.816Z",
 				"name": "items",
 				"type": "base",
 				"system": false,
@@ -575,7 +589,7 @@ func init() {
 			{
 				"id": "mrxs8i8fudqo2e3",
 				"created": "2024-10-19 18:51:47.619Z",
-				"updated": "2024-10-28 02:13:44.963Z",
+				"updated": "2024-10-31 19:19:57.816Z",
 				"name": "eventTypes",
 				"type": "base",
 				"system": false,
@@ -616,7 +630,7 @@ func init() {
 			{
 				"id": "j57p12wtgaqqj62",
 				"created": "2024-10-19 20:06:01.886Z",
-				"updated": "2024-10-28 02:02:25.170Z",
+				"updated": "2024-10-31 19:19:57.817Z",
 				"name": "eventConfig",
 				"type": "base",
 				"system": false,
@@ -773,7 +787,7 @@ func init() {
 			{
 				"id": "o2fn8399e28o9wm",
 				"created": "2024-10-19 23:20:47.048Z",
-				"updated": "2024-10-28 02:13:38.627Z",
+				"updated": "2024-10-31 19:19:57.817Z",
 				"name": "events",
 				"type": "base",
 				"system": false,
@@ -863,7 +877,7 @@ func init() {
 			{
 				"id": "xmrfb0lc2lbf182",
 				"created": "2024-10-30 22:31:58.840Z",
-				"updated": "2024-10-31 18:27:07.933Z",
+				"updated": "2024-10-31 19:19:57.818Z",
 				"name": "eventLogs",
 				"type": "base",
 				"system": false,
@@ -937,7 +951,7 @@ func init() {
 			{
 				"id": "yd7wu88ysosk1ev",
 				"created": "2024-10-31 18:26:51.768Z",
-				"updated": "2024-10-31 19:10:45.145Z",
+				"updated": "2024-10-31 19:19:57.818Z",
 				"name": "eventPlayerLogs",
 				"type": "base",
 				"system": false,
