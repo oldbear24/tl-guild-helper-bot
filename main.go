@@ -202,7 +202,11 @@ func main() {
 		if err != nil {
 			return
 		}
-		app.Dao().DeleteRecord(record)
+		err = app.Dao().DeleteRecord(record)
+		if err != nil {
+			app.Logger().Error("Could not delete event from log", "error", err)
+			return
+		}
 	})
 	defer func() {
 		err := discord.Close() //TODO: Check if bot is running
