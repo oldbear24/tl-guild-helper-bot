@@ -22,7 +22,7 @@ var messageComponentHandlers = map[string]func(s *discordgo.Session, i *discordg
 			return
 		}
 		rollResult := rollDice()
-		player, err := getOrCreatePlayer(i.GuildID, i.Member.User, map[string]any{})
+		player, err := getOrCreatePlayer(app.Dao(), i.GuildID, i.Member.User, map[string]any{})
 		if err != nil {
 			return
 		}

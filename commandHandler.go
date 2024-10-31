@@ -16,7 +16,7 @@ var (
 			if nick, ok := optionMap["nick"]; ok {
 				s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseDeferredChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral}})
 
-				_, err := getOrCreatePlayer(i.GuildID, i.Member.User, map[string]any{"nickname": nick.StringValue()})
+				_, err := getOrCreatePlayer(app.Dao(), i.GuildID, i.Member.User, map[string]any{"nickname": nick.StringValue()})
 				if err != nil {
 					app.Logger().Error("Could not save nickname", "error", err)
 					s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{

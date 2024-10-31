@@ -12,7 +12,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/jellydator/ttlcache/v3"
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
-	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
@@ -66,7 +65,7 @@ func main() {
 			case -4:
 				return discordgo.LogDebug
 			case 0:
-				return discordgo.LogInformational
+				return discordgo.LogWarning /*Lots of unimportant logs*/
 			case 4:
 				return discordgo.LogWarning
 			case 8:
@@ -132,28 +131,7 @@ func main() {
 			app.Logger().Info("Created guild record", "guild", i.ID)
 		}
 
-		members, _ := discord.GuildMembers(i.Guild.ID, "", 1000)
-
-		_, err = app.Dao().DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guildRecord.Id})).Execute()
-		if err != nil {
-			return
-		}
-		for _, v := range members {
-			if v.User.Bot {
-				continue
-			}
-			nick := ""
-			if v.Nick == "" {
-				nick = v.User.GlobalName
-			} else {
-				nick = v.Nick
-			}
-
-			_, err := getOrCreatePlayer(i.Guild.ID, v.User, map[string]any{"serverNick": nick, "active": true})
-			if err != nil {
-				return
-			}
-		}
+		updateGuildPlayer(guildRecord.Id)
 
 	})
 	discord.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -177,7 +155,7 @@ func main() {
 
 	})
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUpdate) {
-		guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
 		if err != nil {
 			return
 		}
@@ -188,7 +166,7 @@ func main() {
 		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
 			return
 		}
-		guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
 		if err != nil {
 			return
 		}
@@ -208,61 +186,17 @@ func main() {
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUserAdd) {
 
-		el, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.GuildScheduledEventID)
-		if err != nil {
-			return
-		}
-		member, err := discord.GuildMember(i.GuildID, i.UserID)
-		if err != nil {
-			return
-		}
-		pl, err := getOrCreatePlayer(i.GuildID, member.User, map[string]any{})
-		if err != nil {
-			return
-		}
-		playerLogRecord, err := app.Dao().FindFirstRecordByFilter("eventPlayerLogs", "eventLog={:el} && player={:pl}", dbx.Params{"el": el.Id, "pl": pl.Id})
-		if err != nil {
-			collection, _ := app.Dao().FindCollectionByNameOrId("eventPlayerLogs")
-			playerLogRecord = models.NewRecord(collection)
-		}
-
-		form := forms.NewRecordUpsert(app, playerLogRecord)
-
-		form.LoadData(map[string]any{
-			"eventLog": el.Id,
-			"player":   pl.Id,
-			"status":   "registered",
-		})
-		form.Submit()
-
+		registerUserOnEvent(i.GuildScheduledEventID, i.GuildID, i.UserID, "registered")
 	})
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUserRemove) {
-		el, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.GuildScheduledEventID)
+		registerUserOnEvent(i.GuildScheduledEventID, i.GuildID, i.UserID, "unregistered")
+	})
+	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventDelete) {
+		record, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.ID)
 		if err != nil {
 			return
 		}
-		member, err := discord.GuildMember(i.GuildID, i.UserID)
-		if err != nil {
-			return
-		}
-		pl, err := getOrCreatePlayer(i.GuildID, member.User, map[string]any{})
-		if err != nil {
-			return
-		}
-		playerLogRecord, err := app.Dao().FindFirstRecordByFilter("eventPlayerLogs", "eventLog={:el} && player={:pl}", dbx.Params{"el": el.Id, "pl": pl.Id})
-		if err != nil {
-			collection, _ := app.Dao().FindCollectionByNameOrId("eventPlayerLogs")
-			playerLogRecord = models.NewRecord(collection)
-		}
-
-		form := forms.NewRecordUpsert(app, playerLogRecord)
-
-		form.LoadData(map[string]any{
-			"eventLog": el.Id,
-			"player":   pl.Id,
-			"status":   "unregistered",
-		})
-		form.Submit()
+		app.Dao().DeleteRecord(record)
 	})
 	defer func() {
 		err := discord.Close() //TODO: Check if bot is running
@@ -305,7 +239,7 @@ func deleteInteractionWithdelay(s *discordgo.Session, i *discordgo.InteractionCr
 }
 
 func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId string) error {
-	gRecord, _ := getOrCreateGuildRecordById(i.GuildID)
+	gRecord, _ := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
 	form := forms.NewRecordUpsert(app, gRecord)
 	form.LoadData(map[string]any{
 		channelDbName: channelId,

@@ -29,7 +29,7 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 	modalCache.Delete(ci.Key())
 	var newRollItem newItemRollCacheItem
 	json.Unmarshal(ci.Value(), &newRollItem)
-	guildRecord, err := getOrCreateGuildRecordById(i.GuildID)
+	guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
 	if err != nil {
 		return
 	}
@@ -50,6 +50,7 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 		"status":          "new",
 	})
 	if err := form.Submit(); err != nil {
+		app.Logger().Error("Cannot create roll record", "error", err)
 		return
 	}
 	//	err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Content: "Roll has been created."}})

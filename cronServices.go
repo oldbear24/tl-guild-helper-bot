@@ -10,7 +10,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/gorhill/cronexpr"
 	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/daos"
 	"github.com/pocketbase/pocketbase/forms"
 	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
@@ -199,31 +198,7 @@ func refreshGuildsMembers() {
 	guilds, _ := app.Dao().FindRecordsByFilter("guilds", "", "", 0, 0)
 	for _, guild := range guilds {
 		guildId := guild.GetString("guild_id")
-		members, _ := discord.GuildMembers(guildId, "", 1000)
-		app.Dao().RunInTransaction(func(txDao *daos.Dao) error {
-
-			_, err := txDao.DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guild.Id})).Execute()
-			if err != nil {
-				return err
-			}
-			for _, v := range members {
-				if v.User.Bot {
-					continue
-				}
-				nick := ""
-				if v.Nick == "" {
-					nick = v.User.GlobalName
-				} else {
-					nick = v.Nick
-				}
-
-				_, err := getOrCreatePlayer(guildId, v.User, map[string]any{"serverNick": nick, "active": true})
-				if err != nil {
-					return err
-				}
-			}
-			return nil
-		})
+		updateGuildPlayer(guildId)
 
 	}
 }
