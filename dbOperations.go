@@ -64,7 +64,7 @@ func getTargetEventChannel(sourceChannel, guildId string) string {
 func getOrCreatePlayer(txDao *daos.Dao, guildId string, discordUser *discordgo.User, data map[string]any) (*models.Record, error) {
 	guildRecord, err := getOrCreateGuildRecordById(txDao, guildId)
 	if err != nil {
-		app.Logger().Error("Could not create/update player record", "error", err)
+		app.Logger().Error("Could not create/update player record missing guild record", "error", err)
 		return nil, err
 	}
 	nickRecord, err := txDao.FindFirstRecordByFilter("players", "guild = {:guildId} && userId = {:userId}", dbx.Params{"guildId": guildRecord.Id, "userId": discordUser.ID})
@@ -83,6 +83,7 @@ func getOrCreatePlayer(txDao *daos.Dao, guildId string, discordUser *discordgo.U
 	form.SetDao(txDao)
 	form.LoadData(data)
 	if err := form.Submit(); err != nil {
+		app.Logger().Error("Could not create/update player record", "error", err)
 		return nil, err
 	}
 
@@ -118,11 +119,14 @@ func registerUserOnEvent(eventId, guildId, playerId, regType string) {
 	form.Submit()
 }
 
-func updateGuildPlayer(guildDbId string) {
-	members, _ := discord.GuildMembers(guildDbId, "", 1000)
+func updateGuildPlayer(guildRecord *models.Record) {
+	members, err := discord.GuildMembers(guildRecord.GetString("guild_id"), "", 1000)
+	if err != nil {
+		app.Logger().Error("Cannot get info about guild members", "error", err)
+	}
 	app.Dao().RunInTransaction(func(txDao *daos.Dao) error {
 
-		_, err := txDao.DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guildDbId})).Execute()
+		_, err := txDao.DB().Update("players", dbx.Params{"active": false}, dbx.NewExp("guild={:guild}", dbx.Params{"guild": guildRecord.Id})).Execute()
 		if err != nil {
 			app.Logger().Error("Could not se active false on players", "error", err)
 			return err
@@ -138,7 +142,7 @@ func updateGuildPlayer(guildDbId string) {
 				nick = v.Nick
 			}
 
-			_, err := getOrCreatePlayer(txDao, guildDbId, v.User, map[string]any{"serverNick": nick, "active": true})
+			_, err := getOrCreatePlayer(txDao, guildRecord.GetString("guild_id"), v.User, map[string]any{"serverNick": nick, "active": "true"})
 			if err != nil {
 				return err
 			}

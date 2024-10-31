@@ -197,9 +197,7 @@ func createEvents() {
 func refreshGuildsMembers() {
 	guilds, _ := app.Dao().FindRecordsByFilter("guilds", "", "", 0, 0)
 	for _, guild := range guilds {
-		guildId := guild.GetString("guild_id")
-		updateGuildPlayer(guildId)
-
+		updateGuildPlayer(guild)
 	}
 }
 

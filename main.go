@@ -131,7 +131,7 @@ func main() {
 			app.Logger().Info("Created guild record", "guild", i.ID)
 		}
 
-		updateGuildPlayer(guildRecord.Id)
+		updateGuildPlayer(guildRecord)
 
 	})
 	discord.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
@@ -159,7 +159,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.ScheduledStartTime)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime)
 	})
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
@@ -170,7 +170,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.ScheduledStartTime)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime)
 		targetChannel := getTargetEventChannel(i.ChannelID, guildRecord.Id)
 		if targetChannel == "" {
 			return
@@ -262,7 +262,7 @@ func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId st
 	app.Logger().Info("Save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId)
 	return nil
 }
-func createOrUpdateEventLogRecord(guildRecord *models.Record, id, name string, start time.Time) {
+func createOrUpdateEventLogRecord(guildRecord *models.Record, id, name, description string, start time.Time) {
 	logRecord, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", id)
 	if err != nil {
 		collection, _ := app.Dao().FindCollectionByNameOrId("eventLogs")
@@ -271,10 +271,11 @@ func createOrUpdateEventLogRecord(guildRecord *models.Record, id, name string, s
 	form := forms.NewRecordUpsert(app, logRecord)
 
 	form.LoadData(map[string]any{
-		"eventName": name,
-		"guild":     guildRecord.Id,
-		"eventId":   id,
-		"start":     start,
+		"eventName":   name,
+		"guild":       guildRecord.Id,
+		"eventId":     id,
+		"start":       start,
+		"description": description,
 	})
 	form.Submit()
 }
