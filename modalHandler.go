@@ -15,6 +15,9 @@ func handleModal(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	if strings.HasPrefix(modalId, "create_roll_modal_") {
 		handleCreateRollModal(modalId, s, i)
 	}
+	if h, ok := modalsHandlers[modalId]; ok {
+		h(s, i)
+	}
 
 }
 
@@ -64,4 +67,31 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 		s.InteractionResponseDelete(i.Interaction)
 	}()*/
 
+}
+
+var modalsHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
+	"feedback_modal": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
+		if err != nil {
+			return
+		}
+		collection, err := app.Dao().FindCollectionByNameOrId("feedback")
+		if err != nil {
+			return
+		}
+
+		data := i.ModalSubmitData()
+		newRollRecord := models.NewRecord(collection)
+		form := forms.NewRecordUpsert(app, newRollRecord)
+		form.LoadData(map[string]any{
+			"guild":           guildRecord.Id,
+			"feedbackMessage": data.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
+		})
+		if err := form.Submit(); err != nil {
+			app.Logger().Error("Cannot create feedback record", "error", err)
+			replyEmpheralInteraction(s, i, "There was error while processing your request :(")
+			return
+		}
+		replyEmpheralInteraction(s, i, "> Saved your feedback ;)")
+	},
 }

@@ -15,7 +15,7 @@ func init() {
 			{
 				"id": "_pb_users_auth_",
 				"created": "2024-10-09 18:46:25.135Z",
-				"updated": "2024-10-31 21:17:27.712Z",
+				"updated": "2024-10-31 23:13:27.558Z",
 				"name": "users",
 				"type": "auth",
 				"system": false,
@@ -78,7 +78,7 @@ func init() {
 			{
 				"id": "493kl7wl5aa5qvw",
 				"created": "2024-10-09 18:47:24.141Z",
-				"updated": "2024-10-31 21:17:27.713Z",
+				"updated": "2024-10-31 23:13:27.558Z",
 				"name": "guilds",
 				"type": "base",
 				"system": false,
@@ -167,7 +167,7 @@ func init() {
 			{
 				"id": "db4psg6zrmmssv2",
 				"created": "2024-10-09 18:48:10.760Z",
-				"updated": "2024-10-31 21:17:27.713Z",
+				"updated": "2024-10-31 23:13:27.559Z",
 				"name": "eventAnnouncementsConfig",
 				"type": "base",
 				"system": false,
@@ -230,7 +230,7 @@ func init() {
 			{
 				"id": "x7ch4g59gc6mg1u",
 				"created": "2024-10-12 01:32:31.380Z",
-				"updated": "2024-10-31 21:17:27.714Z",
+				"updated": "2024-10-31 23:13:27.559Z",
 				"name": "players",
 				"type": "base",
 				"system": false,
@@ -331,7 +331,7 @@ func init() {
 			{
 				"id": "7n8h6g7j86361xn",
 				"created": "2024-10-12 15:10:10.289Z",
-				"updated": "2024-10-31 21:17:27.714Z",
+				"updated": "2024-10-31 23:13:27.559Z",
 				"name": "itemRolls",
 				"type": "base",
 				"system": false,
@@ -449,7 +449,7 @@ func init() {
 			{
 				"id": "tmsr4yger7lzzgr",
 				"created": "2024-10-13 01:30:00.688Z",
-				"updated": "2024-10-31 21:17:27.715Z",
+				"updated": "2024-10-31 23:13:27.559Z",
 				"name": "itemPlayerRolls",
 				"type": "base",
 				"system": false,
@@ -514,7 +514,7 @@ func init() {
 			{
 				"id": "mrrj4sgraz37pmn",
 				"created": "2024-10-19 18:50:46.113Z",
-				"updated": "2024-10-31 21:17:27.715Z",
+				"updated": "2024-10-31 23:13:27.560Z",
 				"name": "items",
 				"type": "base",
 				"system": false,
@@ -589,7 +589,7 @@ func init() {
 			{
 				"id": "mrxs8i8fudqo2e3",
 				"created": "2024-10-19 18:51:47.619Z",
-				"updated": "2024-10-31 21:17:27.716Z",
+				"updated": "2024-10-31 23:13:27.560Z",
 				"name": "eventTypes",
 				"type": "base",
 				"system": false,
@@ -630,7 +630,7 @@ func init() {
 			{
 				"id": "j57p12wtgaqqj62",
 				"created": "2024-10-19 20:06:01.886Z",
-				"updated": "2024-10-31 21:17:27.716Z",
+				"updated": "2024-10-31 23:13:27.560Z",
 				"name": "eventConfig",
 				"type": "base",
 				"system": false,
@@ -787,7 +787,7 @@ func init() {
 			{
 				"id": "o2fn8399e28o9wm",
 				"created": "2024-10-19 23:20:47.048Z",
-				"updated": "2024-10-31 21:17:27.717Z",
+				"updated": "2024-10-31 23:13:27.560Z",
 				"name": "events",
 				"type": "base",
 				"system": false,
@@ -877,7 +877,7 @@ func init() {
 			{
 				"id": "xmrfb0lc2lbf182",
 				"created": "2024-10-30 22:31:58.840Z",
-				"updated": "2024-10-31 22:50:47.659Z",
+				"updated": "2024-10-31 23:13:27.560Z",
 				"name": "eventLogs",
 				"type": "base",
 				"system": false,
@@ -965,7 +965,7 @@ func init() {
 			{
 				"id": "yd7wu88ysosk1ev",
 				"created": "2024-10-31 18:26:51.768Z",
-				"updated": "2024-10-31 21:17:27.718Z",
+				"updated": "2024-10-31 23:13:27.561Z",
 				"name": "eventPlayerLogs",
 				"type": "base",
 				"system": false,
@@ -1022,6 +1022,63 @@ func init() {
 				"indexes": [
 					"CREATE UNIQUE INDEX ` + "`" + `idx_cc3DwvZ` + "`" + ` ON ` + "`" + `eventPlayerLogs` + "`" + ` (\n  ` + "`" + `eventLog` + "`" + `,\n  ` + "`" + `player` + "`" + `\n)"
 				],
+				"listRule": null,
+				"viewRule": null,
+				"createRule": null,
+				"updateRule": null,
+				"deleteRule": null,
+				"options": {}
+			},
+			{
+				"id": "nvwb22m21wcqtwz",
+				"created": "2024-11-15 18:23:58.178Z",
+				"updated": "2024-11-15 18:23:58.178Z",
+				"name": "feedback",
+				"type": "base",
+				"system": false,
+				"schema": [
+					{
+						"system": false,
+						"id": "eajadob6",
+						"name": "feedbackMessage",
+						"type": "text",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"min": null,
+							"max": null,
+							"pattern": ""
+						}
+					},
+					{
+						"system": false,
+						"id": "cesckpch",
+						"name": "guild",
+						"type": "relation",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {
+							"collectionId": "493kl7wl5aa5qvw",
+							"cascadeDelete": false,
+							"minSelect": null,
+							"maxSelect": 1,
+							"displayFields": null
+						}
+					},
+					{
+						"system": false,
+						"id": "4q2xyicn",
+						"name": "resolved",
+						"type": "bool",
+						"required": false,
+						"presentable": false,
+						"unique": false,
+						"options": {}
+					}
+				],
+				"indexes": [],
 				"listRule": null,
 				"viewRule": null,
 				"createRule": null,

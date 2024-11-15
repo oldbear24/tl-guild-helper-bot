@@ -59,4 +59,8 @@ var commands = []*discordgo.ApplicationCommand{
 			},
 		},
 	},
+	{
+		Name:        "feedback",
+		Description: "Send your feedback",
+	},
 }

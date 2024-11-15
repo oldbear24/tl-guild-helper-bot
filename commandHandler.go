@@ -96,5 +96,26 @@ var (
 				app.Logger().Error("Could not create modal", "error", err)
 			}
 		},
+		"feedback": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			modalId := "feedback_modal"
+			err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseModal,
+				Data: &discordgo.InteractionResponseData{
+					CustomID: modalId,
+					Title:    "Send feedback",
+					Components: []discordgo.MessageComponent{
+						discordgo.ActionsRow{
+							Components: []discordgo.MessageComponent{
+								discordgo.TextInput{CustomID: "feedback_text", Required: true, Style: discordgo.TextInputParagraph, Label: "Your feedback", Placeholder: "What are your thoughts..."},
+							},
+						},
+					},
+				},
+			})
+
+			if err != nil {
+				app.Logger().Error("Could not create modal", "error", err)
+			}
+		},
 	}
 )
