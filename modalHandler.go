@@ -89,9 +89,10 @@ var modalsHandlers = map[string]func(s *discordgo.Session, i *discordgo.Interact
 		})
 		if err := form.Submit(); err != nil {
 			app.Logger().Error("Cannot create feedback record", "error", err)
-			replyEmpheralInteraction(s, i, "There was error while processing your request :(")
+			replyEmpheralInteraction(s, i, "> There was error while processing your request :(")
 			return
 		}
+		app.Logger().Info("Someone send feedback message", "guild", guildRecord.Id)
 		replyEmpheralInteraction(s, i, "> Saved your feedback ;)")
 	},
 }
