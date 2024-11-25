@@ -5,40 +5,38 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
+	"github.com/pocketbase/pocketbase/core"
 )
 
 var messageComponentHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 	"roll_button": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		rollRecord, err := app.Dao().FindFirstRecordByFilter("itemRolls", "messageId={:message}", dbx.Params{"message": i.Message.ID})
+		rollRecord, err := app.FindFirstRecordByFilter("itemRolls", "messageId={:message}", dbx.Params{"message": i.Message.ID})
 		if err != nil {
 			return
 		}
-		rollEnd := rollRecord.GetTime("rollEnd")
+		rollEnd := rollRecord.GetDateTime("rollEnd").Time()
 		if rollEnd.Compare(time.Now().UTC()) > 0 {
 			replyEmpheralInteraction(s, i, "This roll has already ended")
 			deleteInteractionWithdelay(s, i, 30)
 			return
 		}
 		rollResult := rollDice()
-		player, err := getOrCreatePlayer(app.Dao(), i.GuildID, i.Member.User, map[string]any{})
+		player, err := getOrCreatePlayer(app, i.GuildID, i.Member.User, map[string]any{})
 		if err != nil {
 			return
 		}
-		collection, err := app.Dao().FindCollectionByNameOrId("itemPlayerRolls")
+		collection, err := app.FindCollectionByNameOrId("itemPlayerRolls")
 		if err != nil {
 			return
 		}
-		rRecord := models.NewRecord(collection)
+		rRecord := core.NewRecord(collection)
 
-		form := forms.NewRecordUpsert(app, rRecord)
-		form.LoadData(map[string]any{
+		rRecord.Load(map[string]any{
 			"roll":         rollRecord.Id,
 			"player":       player.Id,
 			"rolledNumber": rollResult,
 		})
-		if err = form.Submit(); err != nil {
+		if err = app.Save(rRecord); err != nil {
 			replyEmpheralInteraction(s, i, "You cannot roll again!")
 		} else {
 			replyEmpheralInteraction(s, i, "Your roll has been saved")

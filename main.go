@@ -11,13 +11,11 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/jellydator/ttlcache/v3"
+
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
 	"github.com/pocketbase/pocketbase"
 	"github.com/pocketbase/pocketbase/core"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
-	"github.com/pocketbase/pocketbase/tools/cron"
 )
 
 var (
@@ -33,16 +31,10 @@ func main() {
 	var botToken string
 	var disableBot bool
 
-	app.OnBeforeServe().Add(func(e *core.ServeEvent) error {
-		scheduler := cron.New()
-		scheduler.MustAdd("send_item_rolls", "* * * * *", sendItemRolls)
-		scheduler.MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
-		scheduler.MustAdd("create_events", "* * * * *", createEvents)
-		scheduler.MustAdd("get_guilds_members", "0 * * * *", refreshGuildsMembers)
-
-		scheduler.Start()
-		return nil
-	})
+	app.Cron().MustAdd("send_item_rolls", "* * * * *", sendItemRolls)
+	app.Cron().MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
+	app.Cron().MustAdd("create_events", "* * * * *", createEvents)
+	app.Cron().MustAdd("get_guilds_members", "0 * * * *", refreshGuildsMembers)
 
 	app.RootCmd.PersistentFlags().StringVar(&botToken, "token", "", "Bot token")
 	go modalCache.Start()
@@ -58,8 +50,10 @@ func main() {
 
 	discord, _ = discordgo.New("Bot " + botToken)
 	discord.Identify.Intents = discord.Identify.Intents | discordgo.IntentGuildMembers
-	app.OnAfterBootstrap().Add(func(e *core.BootstrapEvent) error {
-
+	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
+		if err := e.Next(); err != nil {
+			return err
+		}
 		discord.LogLevel = func() int {
 			switch e.App.Settings().Logs.MinLevel {
 			case -4:
@@ -134,9 +128,6 @@ func main() {
 		updateGuildPlayer(guildRecord)
 
 	})
-	discord.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
-		app.Logger().Info("Discord bot: Bot is up!")
-	})
 	// Components are part of interactions, so we register InteractionCreate handler
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		switch i.Type {
@@ -155,38 +146,22 @@ func main() {
 
 	})
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUpdate) {
-		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
 			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID)
 	})
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
 		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
 			return
 		}
-		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
 			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime)
-		targetChannel := getTargetEventChannel(i.ChannelID, guildRecord.Id)
-		if targetChannel == "" {
-			return
-		}
-		mention := ""
-		guildMentionRole := guildRecord.GetString("announcemenetRoleId")
-		if guildMentionRole != "" {
-			mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
-		}
-
-		_, err = s.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, i.GuildID, i.ID))
-		if err != nil {
-			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", i.GuildID, "error", err)
-			return
-		}
-		app.Logger().Info("Sent event info", "Guild", i.GuildID, "event", i, "targetChannelId", targetChannel)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID)
 
 	})
 
@@ -198,11 +173,11 @@ func main() {
 		registerUserOnEvent(i.GuildScheduledEventID, i.GuildID, i.UserID, "unregistered")
 	})
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventDelete) {
-		record, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", i.ID)
+		record, err := app.FindFirstRecordByData("eventLogs", "eventId", i.ID)
 		if err != nil {
 			return
 		}
-		err = app.Dao().DeleteRecord(record)
+		err = app.Delete(record)
 		if err != nil {
 			app.Logger().Error("Could not delete event from log", "error", err)
 			return
@@ -249,33 +224,55 @@ func deleteInteractionWithdelay(s *discordgo.Session, i *discordgo.InteractionCr
 }
 
 func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId string) error {
-	gRecord, _ := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
-	form := forms.NewRecordUpsert(app, gRecord)
-	form.LoadData(map[string]any{
+	gRecord, _ := getOrCreateGuildRecordById(app, i.GuildID)
+	gRecord.Load(map[string]any{
 		channelDbName: channelId,
 	})
 
-	if err := form.Submit(); err != nil {
+	if err := app.Save(gRecord); err != nil {
 		app.Logger().Error("Cannot save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId, "error", err)
 		return err
 	}
 	app.Logger().Info("Save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId)
 	return nil
 }
-func createOrUpdateEventLogRecord(guildRecord *models.Record, id, name, description string, start time.Time) {
-	logRecord, err := app.Dao().FindFirstRecordByData("eventLogs", "eventId", id)
+func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, description string, start time.Time, channelId string) {
+	guildId := guildRecord.GetString("guild_id")
+	var cSMess *discordgo.Message
+	logRecord, err := app.FindFirstRecordByData("eventLogs", "eventId", id)
 	if err != nil {
-		collection, _ := app.Dao().FindCollectionByNameOrId("eventLogs")
-		logRecord = models.NewRecord(collection)
-	}
-	form := forms.NewRecordUpsert(app, logRecord)
+		collection, _ := app.FindCollectionByNameOrId("eventLogs")
+		logRecord = core.NewRecord(collection)
+		targetChannel := getTargetEventChannel(channelId, guildRecord.Id)
+		if targetChannel == "" {
+			return
+		}
+		mention := ""
+		guildMentionRole := guildRecord.GetString("announcemenetRoleId")
+		if guildMentionRole != "" {
+			mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
+		}
 
-	form.LoadData(map[string]any{
-		"eventName":   name,
-		"guild":       guildRecord.Id,
-		"eventId":     id,
-		"start":       start,
-		"description": description,
+		cSMess, err = discord.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, guildId, id))
+		if err != nil {
+			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", guildId, "error", err)
+			return
+		}
+
+		app.Logger().Info("Sent event info", "Guild", guildId, "record", logRecord, "targetChannelId", targetChannel)
+	}
+
+	logRecord.Load(map[string]any{
+		"eventName":             name,
+		"guild":                 guildRecord.Id,
+		"eventId":               id,
+		"start":                 start,
+		"description":           description,
+		"announcementMessageId": cSMess.ID,
 	})
-	form.Submit()
+	if err := app.Save(logRecord); err != nil {
+		app.Logger().Error("Could not save record to eventLog", "record", logRecord, "err", err)
+		return
+	}
+	app.Logger().Info("Updated eventLog record", "record", logRecord)
 }

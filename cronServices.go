@@ -1,35 +1,38 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io"
+	"path/filepath"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/adhocore/gronx"
 	"github.com/bwmarrin/discordgo"
-	"github.com/gorhill/cronexpr"
 	"github.com/pocketbase/dbx"
-	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 	"github.com/pocketbase/pocketbase/tools/types"
 )
 
 var sendItemRollsMutex sync.Mutex
 var closeItemRollsMutex sync.Mutex
+var createEventsMutex sync.Mutex
 
 func sendItemRolls() {
 	if !sendItemRollsMutex.TryLock() {
 		return
 	}
 	defer sendItemRollsMutex.Unlock()
-	records, err := app.Dao().FindRecordsByFilter("itemRolls", "status = 'new' && rollStart <= @now", "", 0, 0)
+	records, err := app.FindRecordsByFilter("itemRolls", "status = 'new' && rollStart <= @now", "", 0, 0)
 	if err != nil {
 		return
 	}
 	for _, v := range records {
 
-		guildRecord, _ := app.Dao().FindRecordById("guilds", v.GetString("guild"))
+		guildRecord, _ := app.FindRecordById("guilds", v.GetString("guild"))
 
 		mess, err := discord.ChannelMessageSendComplex(guildRecord.GetString("itemRollChannelId"), &discordgo.MessageSend{
 			Embeds: []*discordgo.MessageEmbed{{
@@ -48,12 +51,11 @@ func sendItemRolls() {
 			println(err.Error())
 			return
 		}
-		form := forms.NewRecordUpsert(app, v)
-		form.LoadData(map[string]any{
+		v.Load(map[string]any{
 			"messageId": mess.ID,
 			"status":    "in_progress",
 		})
-		if err := form.Submit(); err != nil {
+		if err := app.Save(v); err != nil {
 			discord.ChannelMessageDelete(mess.ChannelID, mess.ID)
 		}
 
@@ -66,15 +68,15 @@ func closeItemRolls() {
 	}
 	defer closeItemRollsMutex.Unlock()
 
-	records, err := app.Dao().FindRecordsByFilter("itemRolls", "status = 'in_progress' && rollEnd <= @now", "", 0, 0)
+	records, err := app.FindRecordsByFilter("itemRolls", "status = 'in_progress' && rollEnd <= @now", "", 0, 0)
 	if err != nil {
 		return
 	}
 	for _, rollRecord := range records {
-		guildRecord, _ := app.Dao().FindRecordById("guilds", rollRecord.GetString("guild"))
+		guildRecord, _ := app.FindRecordById("guilds", rollRecord.GetString("guild"))
 
 		var playerRolls []playerRollRecord
-		err = app.Dao().DB().Select("players.userId as userId", "players.nickname as nickname", "itemPlayerRolls.rolledNumber as rolledNumber", "itemPlayerRolls.created as created").From("itemPlayerRolls").InnerJoin("players", dbx.NewExp("players.id = itemPlayerRolls.player")).Where(dbx.NewExp("roll={:roll}", dbx.Params{"roll": rollRecord.Id})).All(&playerRolls)
+		err = app.DB().Select("players.userId as userId", "players.nickname as nickname", "itemPlayerRolls.rolledNumber as rolledNumber", "itemPlayerRolls.created as created").From("itemPlayerRolls").InnerJoin("players", dbx.NewExp("players.id = itemPlayerRolls.player")).Where(dbx.NewExp("roll={:roll}", dbx.Params{"roll": rollRecord.Id})).All(&playerRolls)
 		if err != nil {
 			app.Logger().Error("Sql query error", "error", err)
 		}
@@ -107,72 +109,75 @@ func closeItemRolls() {
 			app.Logger().Error("Cannot send embeded", "error", err)
 			continue
 		}
-		form := forms.NewRecordUpsert(app, rollRecord)
-		form.LoadData(map[string]any{
+		rollRecord.Load(map[string]any{
 			"status": "ended",
 		})
-		if err = form.Submit(); err != nil {
+		if err = app.Save(rollRecord); err != nil {
 			app.Logger().Error("Error saving roll state", "error", err)
 		}
 	}
 }
 func createEvents() {
-
-	eventConfigs, err := app.Dao().FindRecordsByFilter("eventConfig", "enabled=true", "", 0, 0)
-	if err != nil {
+	if !createEventsMutex.TryLock() {
 		return
 	}
-	for _, conf := range eventConfigs {
-		nextTime := cronexpr.MustParse(conf.GetString("eventTime")).Next(time.Now()).UTC()
-		nextVotingTime := cronexpr.MustParse(conf.GetString("eventVotingEndTime")).Next(time.Now()).UTC()
-		guildRecord, _ := app.Dao().FindRecordById("guilds", conf.GetString("guild"))
-
-		existingEvent, err := app.Dao().FindFirstRecordByFilter("events", "event={:event} && startDate>={:start}", dbx.Params{"event": conf.Id, "start": nextTime})
-		if err == nil || existingEvent != nil {
-			continue
-		}
-		eventColl, _ := app.Dao().FindCollectionByNameOrId("events")
-		rec := models.NewRecord(eventColl)
-		form := forms.NewRecordUpsert(app, rec)
-		form.LoadData(map[string]any{
-			"event":     conf.Id,
-			"startDate": nextTime,
-			"status":    "new",
-			"voteEnd":   nextVotingTime,
-		})
-		form.Submit()
-
-		eventTypes, _ := app.Dao().FindRecordsByFilter("eventTypes", "enabled=true", "", 0, 0)
-		voteComponents := []discordgo.MessageComponent{}
-		row := discordgo.ActionsRow{}
-		for _, eventType := range eventTypes {
-
-			if len(row.Components) > 4 {
-				voteComponents = append(voteComponents, row)
-				row = discordgo.ActionsRow{}
-			}
-			row.Components = append(row.Components, discordgo.Button{
-				Label:    eventType.GetString("name"),
-				CustomID: "eventVote_" + rec.Id + "_" + eventType.Id,
-				Style:    discordgo.PrimaryButton,
-			})
-		}
-		if len(row.Components) > 0 {
-			voteComponents = append(voteComponents, row)
-		}
-
-		discord.ChannelMessageSendComplex(guildRecord.GetString("eventVoteChannelId"), &discordgo.MessageSend{
-			Embeds: []*discordgo.MessageEmbed{
-				{
-					Type:        discordgo.EmbedTypeArticle,
-					Title:       conf.GetString("votingTitle"),
-					Description: conf.GetString("votingDescription"),
-				},
-			},
-			Components: voteComponents,
-		})
-
+	defer createEventsMutex.Unlock()
+	records, err := app.FindRecordsByFilter("plannedEvents", "enabled = true && lastPlanned<=@now", "", 0, 0)
+	if err != nil {
+		app.Logger().Error("Could not retrieved planned events", "err", err)
 	}
+	for _, rec := range records {
+		guildRecord, _ := app.FindRecordById("guilds", rec.GetString("guild"))
+		eventDate, err := gronx.NextTickAfter(rec.GetString("startExp"), time.Now().UTC(), true)
+		if err != nil {
+			app.Logger().Error("Could not parse cron expresion from plannedEvent record", "exp", rec.GetString("startExp"), "record", rec, "error", err)
+		}
+		imageName := rec.GetString("image")
+		imageString := ""
+		if imageName != "" {
+			path := filepath.Join(rec.BaseFilesPath(), imageName)
+
+			ext := strings.ReplaceAll(filepath.Ext(path), ".", "")
+			// initialize the filesystem
+			fsys, err := app.NewFilesystem()
+			if err != nil {
+				app.Logger().Error("Error while opening fs", "path", path, "error", err)
+				return
+			}
+			defer fsys.Close()
+			r, err := fsys.GetFile(path)
+			if err != nil {
+				app.Logger().Error("Error while opening file", "path", path, "error", err)
+				return
+			}
+			defer r.Close()
+
+			data, _ := io.ReadAll(r)
+			imageData := base64.StdEncoding.EncodeToString(data)
+
+			imageString = fmt.Sprintf("data:image/%s;base64,%s", ext, imageData)
+		}
+		event, err := discord.GuildScheduledEventCreate(guildRecord.GetString("guild_id"), &discordgo.GuildScheduledEventParams{
+			ChannelID:          rec.GetString("channel"),
+			Name:               rec.GetString("name"),
+			Description:        rec.GetString("description"),
+			ScheduledStartTime: &eventDate,
+			EntityType:         discordgo.GuildScheduledEventEntityTypeVoice,
+			PrivacyLevel:       discordgo.GuildScheduledEventPrivacyLevelGuildOnly,
+			Image:              imageString,
+		})
+		if err != nil {
+			app.Logger().Error("Cannot create guild event", "plannedEvent", rec, "error", err)
+			return
+		}
+		rec.Set("lastPlanned", eventDate)
+		if err := app.Save(rec); err != nil {
+			app.Logger().Error("Could not save schedule record", "record", rec, "error", err)
+		}
+
+		app.Logger().Info("Scheduled guild event", "event", event)
+	}
+
 }
 
 /*
@@ -195,7 +200,7 @@ func createEvents() {
 */
 
 func refreshGuildsMembers() {
-	guilds, _ := app.Dao().FindRecordsByExpr("guilds")
+	guilds, _ := app.FindRecordsByFilter("guilds", "", "", 0, 0)
 	for _, guild := range guilds {
 		updateGuildPlayer(guild)
 	}

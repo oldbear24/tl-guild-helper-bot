@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/forms"
-	"github.com/pocketbase/pocketbase/models"
 )
 
 func handleModal(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -32,19 +32,18 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 	modalCache.Delete(ci.Key())
 	var newRollItem newItemRollCacheItem
 	json.Unmarshal(ci.Value(), &newRollItem)
-	guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
+	guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 	if err != nil {
 		return
 	}
-	collection, err := app.Dao().FindCollectionByNameOrId("itemRolls")
+	collection, err := app.FindCollectionByNameOrId("itemRolls")
 	if err != nil {
 		return
 	}
 
 	data := i.ModalSubmitData()
-	newRollRecord := models.NewRecord(collection)
-	form := forms.NewRecordUpsert(app, newRollRecord)
-	form.LoadData(map[string]any{
+	newRollRecord := core.NewRecord(collection)
+	newRollRecord.Load(map[string]any{
 		"guild":           guildRecord.Id,
 		"itemName":        data.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
 		"itemDescription": data.Components[1].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
@@ -52,7 +51,7 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 		"rollEnd":         time.Now().UTC().AddDate(0, 0, newRollItem.ExpirationDays),
 		"status":          "new",
 	})
-	if err := form.Submit(); err != nil {
+	if err := app.Save(newRollRecord); err != nil {
 		app.Logger().Error("Cannot create roll record", "error", err)
 		return
 	}
@@ -71,19 +70,19 @@ func handleCreateRollModal(modalId string, s *discordgo.Session, i *discordgo.In
 
 var modalsHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){
 	"feedback_modal": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		guildRecord, err := getOrCreateGuildRecordById(app.Dao(), i.GuildID)
+		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
 			return
 		}
-		collection, err := app.Dao().FindCollectionByNameOrId("feedback")
+		collection, err := app.FindCollectionByNameOrId("feedback")
 		if err != nil {
 			return
 		}
 
 		data := i.ModalSubmitData()
-		newRollRecord := models.NewRecord(collection)
+		newRollRecord := core.NewRecord(collection)
 		form := forms.NewRecordUpsert(app, newRollRecord)
-		form.LoadData(map[string]any{
+		newRollRecord.Load(map[string]any{
 			"guild":           guildRecord.Id,
 			"feedbackMessage": data.Components[0].(*discordgo.ActionsRow).Components[0].(*discordgo.TextInput).Value,
 		})
