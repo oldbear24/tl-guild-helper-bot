@@ -148,14 +148,14 @@ func main() {
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUpdate) {
 		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
-			return
+			//return
 		}
 		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID)
 	})
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
 		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
-			return
+			///	return
 		}
 		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
@@ -243,32 +243,40 @@ func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, descriptio
 	if err != nil {
 		collection, _ := app.FindCollectionByNameOrId("eventLogs")
 		logRecord = core.NewRecord(collection)
-		targetChannel := getTargetEventChannel(channelId, guildRecord.Id)
-		if targetChannel == "" {
-			return
+		var targetChannel string
+		if channelId != "" {
+			targetChannel = getTargetEventChannel(channelId, guildRecord.Id)
+		} else {
+			targetChannel = guildRecord.GetString("defaultAnnouncemenetChannel")
 		}
-		mention := ""
-		guildMentionRole := guildRecord.GetString("announcemenetRoleId")
-		if guildMentionRole != "" {
-			mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
-		}
+		if targetChannel != "" {
 
-		cSMess, err = discord.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, guildId, id))
-		if err != nil {
-			app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", guildId, "error", err)
-			return
-		}
+			mention := ""
+			guildMentionRole := guildRecord.GetString("announcemenetRoleId")
+			if guildMentionRole != "" {
+				mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
+			}
 
-		app.Logger().Info("Sent event info", "Guild", guildId, "record", logRecord, "targetChannelId", targetChannel)
+			cSMess, err = discord.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, guildId, id))
+			if err != nil {
+				app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", guildId, "error", err)
+				return
+			}
+
+			app.Logger().Info("Sent event info", "Guild", guildId, "record", logRecord, "targetChannelId", targetChannel)
+		}
 	}
-
+	messageId := ""
+	if cSMess != nil {
+		messageId = cSMess.ID
+	}
 	logRecord.Load(map[string]any{
 		"eventName":             name,
 		"guild":                 guildRecord.Id,
 		"eventId":               id,
 		"start":                 start,
 		"description":           description,
-		"announcementMessageId": cSMess.ID,
+		"announcementMessageId": messageId,
 	})
 	if err := app.Save(logRecord); err != nil {
 		app.Logger().Error("Could not save record to eventLog", "record", logRecord, "err", err)

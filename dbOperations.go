@@ -42,6 +42,9 @@ func getOrCreateGuildRecordById(txApp core.App, discordGuildId string) (*core.Re
 	return guildRecord, err
 }
 func getTargetEventChannel(sourceChannel, guildId string) string {
+	if sourceChannel == "" {
+		return ""
+	}
 	targetChannels := []struct {
 		Id string `db:"annoucementChannelId"`
 	}{}
