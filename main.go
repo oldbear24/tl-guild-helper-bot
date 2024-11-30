@@ -205,7 +205,7 @@ func parseOptions(options []*discordgo.ApplicationCommandInteractionDataOption) 
 
 func rollDice() int {
 
-	return rand.IntN(100)
+	return rand.IntN(99) + 1
 }
 
 type newItemRollCacheItem struct {

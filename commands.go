@@ -63,4 +63,8 @@ var commands = []*discordgo.ApplicationCommand{
 		Name:        "feedback",
 		Description: "Send your feedback",
 	},
+	{
+		Name:        "roll",
+		Description: "Roll a dice",
+	},
 }

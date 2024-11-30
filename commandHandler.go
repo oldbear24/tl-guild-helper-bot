@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
@@ -116,6 +117,14 @@ var (
 			if err != nil {
 				app.Logger().Error("Could not create modal", "error", err)
 			}
+		},
+
+		"roll": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+			number := rollDice()
+			responseText := fmt.Sprintf("> <@%s> dice result: %d", i.Member.User.ID, number)
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{
+				Content: responseText,
+			}})
 		},
 	}
 )
