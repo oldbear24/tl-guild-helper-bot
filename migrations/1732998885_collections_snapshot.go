@@ -316,6 +316,20 @@ func init() {
 						"type": "text"
 					},
 					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text1092505733",
+						"max": 0,
+						"min": 0,
+						"name": "defaultAnnouncemenetChannel",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
 						"hidden": false,
 						"id": "autodate2990389176",
 						"name": "created",
@@ -989,6 +1003,20 @@ func init() {
 						"max": 0,
 						"min": 0,
 						"name": "announcementMessageId",
+						"pattern": "",
+						"presentable": false,
+						"primaryKey": false,
+						"required": false,
+						"system": false,
+						"type": "text"
+					},
+					{
+						"autogeneratePattern": "",
+						"hidden": false,
+						"id": "text2794890546",
+						"max": 0,
+						"min": 0,
+						"name": "announcementMessageChannelId",
 						"pattern": "",
 						"presentable": false,
 						"primaryKey": false,

@@ -35,6 +35,7 @@ func main() {
 	app.Cron().MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
 	app.Cron().MustAdd("create_events", "* * * * *", createEvents)
 	app.Cron().MustAdd("get_guilds_members", "0 * * * *", refreshGuildsMembers)
+	app.Cron().MustAdd("get_guilds_members", "*/15 * * * *", autoDeleteOldEventMessages)
 
 	app.RootCmd.PersistentFlags().StringVar(&botToken, "token", "", "Bot token")
 	go modalCache.Start()
@@ -267,16 +268,19 @@ func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, descriptio
 		}
 	}
 	messageId := ""
+	messageChannel := ""
 	if cSMess != nil {
 		messageId = cSMess.ID
+		messageChannel = cSMess.ChannelID
 	}
 	logRecord.Load(map[string]any{
-		"eventName":             name,
-		"guild":                 guildRecord.Id,
-		"eventId":               id,
-		"start":                 start,
-		"description":           description,
-		"announcementMessageId": messageId,
+		"eventName":                    name,
+		"guild":                        guildRecord.Id,
+		"eventId":                      id,
+		"start":                        start,
+		"description":                  description,
+		"announcementMessageId":        messageId,
+		"announcementMessageChannelId": messageChannel,
 	})
 	if err := app.Save(logRecord); err != nil {
 		app.Logger().Error("Could not save record to eventLog", "record", logRecord, "err", err)

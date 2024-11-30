@@ -206,6 +206,32 @@ func refreshGuildsMembers() {
 	}
 }
 
+func autoDeleteOldEventMessages() {
+	timeToDelete := time.Now().UTC().Add(time.Hour * 2)
+	recordsToDelete, err := app.FindRecordsByFilter("eventLogs", "start< {:date} && deleted = false", "", 0, 0, dbx.Params{"date": timeToDelete})
+	if err != nil {
+		app.Logger().Error("Searching for eventLogs recod that needs to be deleted failed!", "error", err)
+		return
+	}
+	for _, record := range recordsToDelete {
+		messageId := record.GetString("announcementMessageId")
+		messageChannelId := record.GetString("announcementMessageChannelId")
+		if messageId != "" && messageChannelId != "" {
+			err := discord.ChannelMessageDelete(messageChannelId, messageId, discordgo.WithAuditLogReason("Auto event delete"))
+			if err != nil {
+				app.Logger().Error("Could not delete event message", "event", record, "error", err)
+			} else {
+				app.Logger().Info("Sucesfully delete message for event announcement", "event", record)
+			}
+		} else {
+			app.Logger().Warn("Could not delete event message because some parameters are missing", "event", record)
+		}
+		record.Set("deleted", true)
+		app.Save(record)
+
+	}
+}
+
 type playerRollRecord struct {
 	DiscordUserId string         `db:"userId"`
 	Nickname      string         `db:"nickname"`
