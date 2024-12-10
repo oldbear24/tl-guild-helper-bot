@@ -128,7 +128,7 @@ func createEvents() {
 	}
 	for _, rec := range records {
 		guildRecord, _ := app.FindRecordById("guilds", rec.GetString("guild"))
-		eventDate, err := gronx.NextTickAfter(rec.GetString("startExp"), time.Now().UTC(), true)
+		eventDate, err := gronx.NextTickAfter(rec.GetString("startExp"), time.Now().UTC().Add(time.Minute*5), true)
 		if err != nil {
 			app.Logger().Error("Could not parse cron expresion from plannedEvent record", "exp", rec.GetString("startExp"), "record", rec, "error", err)
 		}
