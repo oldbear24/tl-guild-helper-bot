@@ -67,4 +67,16 @@ var commands = []*discordgo.ApplicationCommand{
 		Name:        "roll",
 		Description: "Roll a dice",
 	},
+	{
+		Name:        "ss",
+		Description: "Sends image to screensshot database",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionAttachment,
+				Name:        "screenshot",
+				Description: "Screenshot",
+				Required:    true,
+			},
+		},
+	},
 }
