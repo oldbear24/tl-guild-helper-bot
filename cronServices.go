@@ -219,12 +219,12 @@ func autoDeleteOldEventMessages() {
 		if messageId != "" && messageChannelId != "" {
 			err := discord.ChannelMessageDelete(messageChannelId, messageId, discordgo.WithAuditLogReason("Auto event delete"))
 			if err != nil {
-				app.Logger().Error("Could not delete event message", "event", record, "error", err)
+				app.Logger().Error("Could not delete event message", "event", record, "error", err, "deleteDate", timeToDelete)
 			} else {
-				app.Logger().Info("Sucesfully delete message for event announcement", "event", record)
+				app.Logger().Info("Sucesfully delete message for event announcement", "event", record, "deleteDate", timeToDelete)
 			}
 		} else {
-			app.Logger().Warn("Could not delete event message because some parameters are missing", "event", record)
+			app.Logger().Warn("Could not delete event message because some parameters are missing", "event", record, "deleteDate", timeToDelete)
 		}
 		record.Set("deleted", true)
 		app.Save(record)
