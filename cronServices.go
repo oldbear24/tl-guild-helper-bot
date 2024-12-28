@@ -207,7 +207,7 @@ func refreshGuildsMembers() {
 }
 
 func autoDeleteOldEventMessages() {
-	timeToDelete := time.Now().UTC().Add(time.Hour * 2)
+	timeToDelete := time.Now().UTC().Add(-time.Hour * 2)
 	recordsToDelete, err := app.FindRecordsByFilter("eventLogs", "start< {:date} && deleted = false", "", 0, 0, dbx.Params{"date": timeToDelete})
 	if err != nil {
 		app.Logger().Error("Searching for eventLogs recod that needs to be deleted failed!", "error", err)
