@@ -130,6 +130,11 @@ func createEvents() {
 	for _, rec := range records {
 		guildRecord, _ := app.FindRecordById("guilds", rec.GetString("guild"))
 		eventDate, err := gronx.NextTickAfter(rec.GetString("startExp"), time.Now().UTC().Add(time.Minute*5), true)
+		weekType := rec.GetString("week")
+		_, week := eventDate.ISOWeek()
+		if (weekType == "odd" && week%2 == 0) || (weekType == "even" && week%2 != 0) {
+			eventDate = eventDate.AddDate(0, 0, 7)
+		}
 		if err != nil {
 			app.Logger().Error("Could not parse cron expresion from plannedEvent record", "exp", rec.GetString("startExp"), "record", rec, "error", err)
 		}
