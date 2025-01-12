@@ -265,22 +265,23 @@ func notifyEventStart() {
 	for _, record := range recordsToNotify {
 		guildRecord, _ := app.FindRecordById("guilds", record.GetString("guild"))
 		notifyChannel := guildRecord.GetString("eventReminderChanngelId")
-		if notifyChannel == "" {
-			continue
-		}
-		message, err := discord.ChannelMessageSendEmbed(notifyChannel, &discordgo.MessageEmbed{
-			Type:        discordgo.EmbedTypeArticle,
-			URL:         "",
-			Title:       fmt.Sprintf("Event: %s", record.GetString("eventName")),
-			Description: fmt.Sprintf("Event is starting <t:%d:R>!", record.GetDateTime("start").Time().Unix()),
-		})
-		if err != nil {
-			app.Logger().Error("Could not send event start notification", "event", record, "error", err)
-			continue
+		if notifyChannel != "" {
+
+			message, err := discord.ChannelMessageSendEmbed(notifyChannel, &discordgo.MessageEmbed{
+				Type:        discordgo.EmbedTypeArticle,
+				URL:         "",
+				Title:       fmt.Sprintf("Event: %s", record.GetString("eventName")),
+				Description: fmt.Sprintf("Event is starting <t:%d:R>!", record.GetDateTime("start").Time().Unix()),
+			})
+			if err != nil {
+				app.Logger().Error("Could not send event start notification", "event", record, "error", err)
+				continue
+			}
+			record.Set("reminderMessageId", message.ID)
+			record.Set("reminderMessageChannelId", notifyChannel)
 		}
 		record.Set("announced", true)
-		record.Set("reminderMessageId", message.ID)
-		record.Set("reminderMessageChannelId", notifyChannel)
+
 		if err := app.Save(record); err != nil {
 			app.Logger().Error("Could not save event log record", "record", record, "error", err)
 		}
