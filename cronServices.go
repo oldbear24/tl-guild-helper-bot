@@ -284,7 +284,10 @@ func notifyEventStart() {
 
 		if err := app.Save(record); err != nil {
 			app.Logger().Error("Could not save event log record", "record", record, "error", err)
+		} else {
+			app.Logger().Info("Event start notification sent", "event", record)
 		}
+
 	}
 }
 
