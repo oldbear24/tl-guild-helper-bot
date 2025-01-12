@@ -265,6 +265,9 @@ func notifyEventStart() {
 	for _, record := range recordsToNotify {
 		guildRecord, _ := app.FindRecordById("guilds", record.GetString("guild"))
 		notifyChannel := guildRecord.GetString("eventReminderChanngelId")
+		if notifyChannel == "" {
+			continue
+		}
 		message, err := discord.ChannelMessageSendEmbed(notifyChannel, &discordgo.MessageEmbed{
 			Type:        discordgo.EmbedTypeArticle,
 			URL:         "",
