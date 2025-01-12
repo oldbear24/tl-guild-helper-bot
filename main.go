@@ -35,8 +35,8 @@ func main() {
 	app.Cron().MustAdd("close_item_rolls", "* * * * *", closeItemRolls)
 	app.Cron().MustAdd("create_events", "* * * * *", createEvents)
 	app.Cron().MustAdd("get_guilds_members", "0 * * * *", refreshGuildsMembers)
-	app.Cron().MustAdd("get_guilds_members", "*/15 * * * *", autoDeleteOldEventMessages)
-
+	app.Cron().MustAdd("auto_delete_old_event_messages", "*/15 * * * *", autoDeleteOldEventMessages)
+	app.Cron().MustAdd("notify_event_start", "* * * * *", notifyEventStart)
 	app.RootCmd.PersistentFlags().StringVar(&botToken, "token", "", "Bot token")
 	go modalCache.Start()
 	app.RootCmd.PersistentFlags().BoolVar(&disableBot, "db", false, "Disables bot startup")

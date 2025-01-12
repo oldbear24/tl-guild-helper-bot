@@ -20,6 +20,7 @@ import (
 var sendItemRollsMutex sync.Mutex
 var closeItemRollsMutex sync.Mutex
 var createEventsMutex sync.Mutex
+var notifyEventsMutex sync.Mutex
 
 func sendItemRolls() {
 	if !sendItemRollsMutex.TryLock() {
@@ -226,9 +227,55 @@ func autoDeleteOldEventMessages() {
 		} else {
 			app.Logger().Warn("Could not delete event message because some parameters are missing", "event", record, "deleteDate", timeToDelete)
 		}
+		reminderMessageId := record.GetString("reminderMessageId")
+		reminderMessageChannelId := record.GetString("reminderMessageChannelId")
+		if messageId != "" && messageChannelId != "" {
+			err := discord.ChannelMessageDelete(reminderMessageChannelId, reminderMessageId, discordgo.WithAuditLogReason("Auto event delete"))
+			if err != nil {
+				app.Logger().Error("Could not delete event reminder message", "event", record, "error", err, "deleteDate", timeToDelete)
+			} else {
+				app.Logger().Info("Sucesfully delete message for event reminder", "event", record, "deleteDate", timeToDelete)
+			}
+		} else {
+			app.Logger().Warn("Could not delete event reminder message because some parameters are missing", "event", record, "deleteDate", timeToDelete)
+		}
 		record.Set("deleted", true)
 		app.Save(record)
 
+	}
+}
+
+func notifyEventStart() {
+
+	if !notifyEventsMutex.TryLock() {
+		return
+	}
+	defer notifyEventsMutex.Unlock()
+	timeToNotify := time.Now().UTC().Add(time.Hour)
+	recordsToNotify, err := app.FindRecordsByFilter("eventLogs", "start <= {:timeToNotify} && announced = false", "", 0, 0, dbx.Params{"timeToNotify": timeToNotify})
+	if err != nil {
+		app.Logger().Error("Searching for eventLogs records that need to be announced failed!", "error", err)
+		return
+	}
+	for _, record := range recordsToNotify {
+		guildRecord, _ := app.FindRecordById("guilds", record.GetString("guild"))
+		notifyChannel := guildRecord.GetString("eventReminderChanngelId")
+		message, err := discord.ChannelMessageSendEmbed(notifyChannel, &discordgo.MessageEmbed{
+			Type:        discordgo.EmbedTypeArticle,
+			URL:         "",
+			Title:       fmt.Sprintf("Event: %s", record.GetString("eventName")),
+			Description: fmt.Sprintf("Event is starting <t:%d:R>!", record.GetDateTime("start").Time().Unix()),
+		})
+		if err != nil {
+			app.Logger().Error("Could not send event start notification", "event", record, "error", err)
+			continue
+		}
+		record.Set("announced", true)
+		record.Set("reminderMessageId", message.ID)
+		record.Set("reminderMessageChannelId", notifyChannel)
+		if err := app.Save(record); err != nil {
+			app.Logger().Error("Could not save event log record", "record", record, "error", err)
+		}
 	}
 }
 
