@@ -149,20 +149,20 @@ func main() {
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventUpdate) {
 		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
-			//return
+			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID, i.Image)
 	})
 
 	discord.AddHandler(func(s *discordgo.Session, i *discordgo.GuildScheduledEventCreate) {
-		if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
+		/*if i.EntityType == discordgo.GuildScheduledEventEntityTypeExternal {
 			///	return
-		}
+		}*/
 		guildRecord, err := getOrCreateGuildRecordById(app, i.GuildID)
 		if err != nil {
 			return
 		}
-		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID)
+		createOrUpdateEventLogRecord(guildRecord, i.ID, i.Name, i.Description, i.ScheduledStartTime, i.ChannelID, i.Image)
 
 	})
 
@@ -237,7 +237,7 @@ func setGuildChannel(i *discordgo.InteractionCreate, channelDbName, channelId st
 	app.Logger().Info("Save guild chanel", "guildId", i.GuildID, "channel_db_name", channelDbName, "channel", channelId)
 	return nil
 }
-func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, description string, start time.Time, channelId string) {
+func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, description string, start time.Time, channelId string, imageID string) {
 	guildId := guildRecord.GetString("guild_id")
 	var cSMess *discordgo.Message
 	logRecord, err := app.FindFirstRecordByData("eventLogs", "eventId", id)
@@ -258,7 +258,7 @@ func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, descriptio
 				mention = fmt.Sprintf("<@&%s>\n", guildMentionRole)
 			}
 
-			cSMess, err = discord.ChannelMessageSend(targetChannel, fmt.Sprintf("%shttps://discord.com/events/%s/%s", mention, guildId, id))
+			cSMess, err = discord.ChannelMessageSend(targetChannel, fmt.Sprintf("> # [%s](https://discord.com/events/%s/%s)\n||%s||", name, guildId, id, mention))
 			if err != nil {
 				app.Logger().Error("Could not sent discord message!", "channel", targetChannel, "guild", guildId, "error", err)
 				return
@@ -281,6 +281,7 @@ func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, descriptio
 		"description":                  description,
 		"announcementMessageId":        messageId,
 		"announcementMessageChannelId": messageChannel,
+		"imageId":                      imageID,
 	})
 	if err := app.Save(logRecord); err != nil {
 		app.Logger().Error("Could not save record to eventLog", "record", logRecord, "err", err)

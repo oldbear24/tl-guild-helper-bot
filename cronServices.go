@@ -266,10 +266,17 @@ func notifyEventStart() {
 		guildRecord, _ := app.FindRecordById("guilds", record.GetString("guild"))
 		notifyChannel := guildRecord.GetString("eventReminderChanngelId")
 		if notifyChannel != "" {
-
+			eventId := record.GetString("eventId")
+			imageId := record.GetString("imageId")
+			imageUrl := ""
+			if imageId != "" {
+				imageUrl = fmt.Sprintf("https://cdn.discordapp.com/guild-events/%s/%s.png?size=4096", eventId, imageId)
+			}
 			message, err := discord.ChannelMessageSendEmbed(notifyChannel, &discordgo.MessageEmbed{
-				Type:        discordgo.EmbedTypeArticle,
-				URL:         "",
+				Type:        discordgo.EmbedTypeImage,
+				URL:         fmt.Sprintf("https://discord.com/events/%s/%s", guildRecord.GetString("guild_id"), eventId),
+				Image:       &discordgo.MessageEmbedImage{URL: imageUrl},
+				Color:       317951, // Light blue color
 				Title:       fmt.Sprintf("Event: %s", record.GetString("eventName")),
 				Description: fmt.Sprintf("Event is starting <t:%d:R>!", record.GetDateTime("start").Time().Unix()),
 			})
