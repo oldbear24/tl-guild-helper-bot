@@ -22,8 +22,6 @@ var closeItemRollsMutex sync.Mutex
 var createEventsMutex sync.Mutex
 var notifyEventsMutex sync.Mutex
 
-var usersResponse []string
-
 func sendItemRolls() {
 	if !sendItemRollsMutex.TryLock() {
 		return
