@@ -194,12 +194,16 @@ func main() {
 				return e.BadRequestError("Missing guildId", nil)
 			}
 			type User struct {
-				Id       string `db:"id" json:"id"`
-				Nickname string `db:"nickname" json:"nickname"`
+				Id       string `db:"userId" json:"id"`
+				Nickname string `db:"serverNick" json:"nickname"`
 			}
 			usersResponse := []User{}
-			e.App.DB().Select("players.userId", "players.serverNick").From("players").Join("INNER JOIN", "guilds", dbx.NewExp("players.guild=guilds.id")).Where(dbx.NewExp("guilds.guild_id={:guildId}", dbx.Params{"guildId": guildId})).All(&usersResponse)
-			return e.BindBody(usersResponse)
+			guildRecord, err := app.FindFirstRecordByData("guilds", "guild_id", guildId)
+			if err != nil {
+				return e.NotFoundError("Guild could not be found", err)
+			}
+			e.App.DB().Select("userId", "serverNick").From("players").Where(dbx.NewExp("guild={:guildId}", dbx.Params{"guildId": guildRecord.Id})).All(&usersResponse)
+			return e.JSON(200, usersResponse)
 		}).Bind(apis.RequireAuth())
 		return se.Next()
 	})
