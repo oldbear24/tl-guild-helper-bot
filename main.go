@@ -13,7 +13,9 @@ import (
 	"github.com/jellydator/ttlcache/v3"
 
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
+	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
@@ -183,6 +185,23 @@ func main() {
 			app.Logger().Error("Could not delete event from log", "error", err)
 			return
 		}
+	})
+	app.OnServe().BindFunc(func(se *core.ServeEvent) error {
+		// register "GET /hello/{name}" route (allowed for everyone)
+		se.Router.GET("/api/tlgh/get-nicknames/{guildId}", func(e *core.RequestEvent) error {
+			guildId := e.Request.PathValue("guildId")
+			if guildId == "" {
+				return e.BadRequestError("Missing guildId", nil)
+			}
+			type User struct {
+				Id       string `db:"id" json:"id"`
+				Nickname string `db:"nickname" json:"nickname"`
+			}
+			usersResponse := []User{}
+			e.App.DB().Select("players.userId", "players.serverNick").From("players").Join("INNER JOIN", "guilds", dbx.NewExp("players.guild=guilds.id")).Where(dbx.NewExp("guilds.guild_id={:guildId}", dbx.Params{"guildId": guildId})).All(&usersResponse)
+			return e.BindBody(usersResponse)
+		}).Bind(apis.RequireAuth())
+		return se.Next()
 	})
 	defer func() {
 		err := discord.Close() //TODO: Check if bot is running
