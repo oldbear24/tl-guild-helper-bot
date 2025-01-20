@@ -15,6 +15,7 @@ import (
 	_ "github.com/oldbear24/tl-guild-helper-bot/migrations"
 	"github.com/pocketbase/dbx"
 	"github.com/pocketbase/pocketbase"
+	"github.com/pocketbase/pocketbase/apis"
 	"github.com/pocketbase/pocketbase/core"
 	"github.com/pocketbase/pocketbase/plugins/migratecmd"
 )
@@ -203,7 +204,7 @@ func main() {
 			}
 			e.App.DB().Select("userId", "serverNick").From("players").Where(dbx.NewExp("guild={:guildId} and active=true", dbx.Params{"guildId": guildRecord.Id})).All(&usersResponse)
 			return e.JSON(200, usersResponse)
-		}) //.Bind(apis.RequireAuth())
+		}).Bind(apis.RequireAuth())
 		return se.Next()
 	})
 	defer func() {
