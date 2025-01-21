@@ -138,7 +138,7 @@ var (
 			guild, err := s.State.Guild(i.GuildID)
 
 			if err != nil {
-				replyEmpheralInteraction(s, i, "> Failed to processed your request")
+				replyEmpheralInteraction(s, i, "Failed to processed your request")
 				return
 			}
 			csvContent := ""
@@ -153,10 +153,12 @@ var (
 				app.Logger().Error("Failed to create export for dkp", "guildId", i.GuildID, "member", i.Member.User.ID, "error", err)
 				return
 			}
+			csvContent = strings.Trim(csvContent, "\n")
 			reader := strings.NewReader(csvContent)
 			fileNamePart := time.Now().UTC().Format("20060102150405")
+
 			s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
-				Content: fmt.Sprintf("> DKP Export %s", fileNamePart),
+				Content: fmt.Sprintf("DKP Export %s", fileNamePart),
 				Files: []*discordgo.File{
 					{
 						Name:        fmt.Sprintf("%s_dkp_export.csv", fileNamePart),
