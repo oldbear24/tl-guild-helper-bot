@@ -52,7 +52,7 @@ func main() {
 	})
 
 	discord, _ = discordgo.New("Bot " + botToken)
-	discord.Identify.Intents = discord.Identify.Intents | discordgo.IntentGuildMembers
+	discord.Identify.Intents = discord.Identify.Intents | discordgo.IntentGuildMembers | discordgo.IntentGuildVoiceStates
 	app.OnBootstrap().BindFunc(func(e *core.BootstrapEvent) error {
 		if err := e.Next(); err != nil {
 			return err

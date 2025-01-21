@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/google/uuid"
@@ -130,6 +132,39 @@ var (
 			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseChannelMessageWithSource, Data: &discordgo.InteractionResponseData{
 				Content: "Not implemented",
 			}})
+		},
+		"dkp-export": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+
+			guild, err := s.State.Guild(i.GuildID)
+
+			if err != nil {
+				replyEmpheralInteraction(s, i, "> Failed to processed your request")
+				return
+			}
+			csvContent := ""
+
+			for _, v := range guild.VoiceStates {
+				if v.ChannelID == i.ChannelID {
+					csvContent += fmt.Sprintf("%s\n", v.UserID)
+				}
+			}
+			channel, err := s.UserChannelCreate(i.Member.User.ID)
+			if err != nil {
+				app.Logger().Error("Failed to create export for dkp", "guildId", i.GuildID, "member", i.Member.User.ID, "error", err)
+				return
+			}
+			reader := strings.NewReader(csvContent)
+			fileNamePart := time.Now().UTC().Format("20060102150405")
+			s.ChannelMessageSendComplex(channel.ID, &discordgo.MessageSend{
+				Content: fmt.Sprintf("> DKP Export %s", fileNamePart),
+				Files: []*discordgo.File{
+					{
+						Name:        fmt.Sprintf("%s_dkp_export.csv", fileNamePart),
+						ContentType: "text/csv",
+						Reader:      reader,
+					},
+				}})
+			app.Logger().Info("Created dkp-export", "guildId", i.GuildID, "member", i.Member.User.ID, "data", csvContent)
 		},
 	}
 )

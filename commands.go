@@ -7,7 +7,6 @@ var commands = []*discordgo.ApplicationCommand{
 		Name:        "gamenick",
 		Description: "Command for setting in-game nickname",
 		Options: []*discordgo.ApplicationCommandOption{
-
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
 				Name:        "nick",
@@ -69,7 +68,7 @@ var commands = []*discordgo.ApplicationCommand{
 	},
 	{
 		Name:        "ss",
-		Description: "Sends image to screensshot database",
+		Description: "Sends image to screenshot database",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionAttachment,
@@ -78,5 +77,9 @@ var commands = []*discordgo.ApplicationCommand{
 				Required:    true,
 			},
 		},
+	},
+	{
+		Name: "dkp-export",
+		Type: discordgo.UserApplicationCommand,
 	},
 }
