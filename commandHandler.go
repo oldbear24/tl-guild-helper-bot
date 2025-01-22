@@ -134,8 +134,13 @@ var (
 			}})
 		},
 		"dkp-export": func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{Type: discordgo.InteractionResponseDeferredChannelMessageWithSource, Data: &discordgo.InteractionResponseData{Flags: discordgo.MessageFlagsEphemeral}})
-
+			s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "Export will be sent to your DMs",
+					Flags:   discordgo.MessageFlagsSuppressNotifications | discordgo.MessageFlagsEphemeral,
+				},
+			})
 			guild, err := s.State.Guild(i.GuildID)
 
 			if err != nil {
@@ -167,8 +172,7 @@ var (
 						Reader:      reader,
 					},
 				}})
-			replyEmpheralInteraction(s, i, "File was sent to privare message")
-			deleteInteractionWithdelay(s, i, 30)
+			deleteInteractionWithdelay(s, i, 10)
 			app.Logger().Info("Created dkp-export", "guildId", i.GuildID, "member", i.Member.User.ID, "data", csvContent)
 		},
 	}
