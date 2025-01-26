@@ -234,7 +234,7 @@ func autoDeleteOldEventMessages() {
 		}
 		reminderMessageId := record.GetString("reminderMessageId")
 		reminderMessageChannelId := record.GetString("reminderMessageChannelId")
-		if messageId != "" && messageChannelId != "" {
+		if reminderMessageId != "" && reminderMessageChannelId != "" {
 			err := discord.ChannelMessageDelete(reminderMessageChannelId, reminderMessageId, discordgo.WithAuditLogReason("Auto event delete"))
 			if err != nil {
 				app.Logger().Error("Could not delete event reminder message", "event", record, "error", err, "deleteDate", timeToDelete)

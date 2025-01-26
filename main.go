@@ -268,10 +268,12 @@ func createOrUpdateEventLogRecord(guildRecord *core.Record, id, name, descriptio
 		collection, _ := app.FindCollectionByNameOrId("eventLogs")
 		logRecord = core.NewRecord(collection)
 		var targetChannel string
+
 		if channelId != "" {
 			targetChannel = getTargetEventChannel(channelId, guildRecord.Id)
-		} else {
-			targetChannel = guildRecord.GetString("defaultAnnouncemenetChannel")
+			if targetChannel == "" {
+				targetChannel = guildRecord.GetString("defaultAnnouncemenetChannel")
+			}
 		}
 		if targetChannel != "" {
 
