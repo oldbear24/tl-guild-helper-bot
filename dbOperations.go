@@ -136,6 +136,9 @@ func updateGuildPlayer(guildRecord *core.Record) {
 			} else {
 				nick = v.Nick
 			}
+			if nick == "" {
+				nick = v.User.Username
+			}
 
 			_, err := getOrCreatePlayer(txApp, guildRecord.GetString("guild_id"), v.User, map[string]any{"serverNick": nick, "active": "true"})
 			if err != nil {
